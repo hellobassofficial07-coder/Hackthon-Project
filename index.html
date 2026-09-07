@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillBridge - Industry & Academia Career Nexus</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- React & Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #eef2ff;
+      --surface: #ffffff;
+      --background: #f8fafc;
+      --border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #06b6d4;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navbar */
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .nav-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      cursor: pointer;
+    }
+
+    .brand-logo {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      font-weight: 800;
+      font-size: 1.1rem;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+    }
+
+    .brand-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    .nav-pill {
+      display: flex;
+      align-items: center;
+      background: #f1f5f9;
+      border-radius: 9999px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .nav-item {
+      background: transparent;
+      border: none;
+      padding: 0.45rem 1.1rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav-item:hover { color: var(--text-main); }
+    .nav-item.active {
+      background: var(--surface);
+      color: var(--primary);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: #f1f5f9;
+      border: 1px solid transparent;
+      border-radius: 9999px;
+      padding: 0.5rem 1rem;
+      width: 220px;
+      gap: 8px;
+    }
+
+    .search-box input {
+      border: none;
+      outline: none;
+      width: 100%;
+      font-size: 0.875rem;
+      background: transparent;
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-left: 8px;
+    }
+
+    .user-role-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .badge-enterprise {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .badge-student {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .logout-btn:hover { background: #fee2e2; color: #ef4444; border-color: #fca5a5; }
+
+    /* Core Layout */
+    .app-layout {
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: calc(100vh - 65px);
+    }
+
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .sidebar-heading {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      padding-left: 0.75rem;
+    }
+
+    .sidebar-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      width: 100%;
+      padding: 0.7rem 0.85rem;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+
+    .sidebar-btn:hover {
+      background: #f1f5f9;
+      color: var(--text-main);
+    }
+
+    .sidebar-btn.active {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .content-area {
+      padding: 1.75rem;
+      overflow-y: auto;
+    }
+
+    /* Auth Screen */
+    .auth-overlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #eef2ff, #f8fafc);
+      padding: 24px;
+    }
+
+    .auth-card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--border);
+      width: 100%;
+      max-width: 520px;
+      padding: 2.5rem;
+    }
+
+    .role-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      gap: 4px;
+    }
+
+    .role-toggle-btn {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-muted);
+      transition: 0.2s;
+    }
+
+    .role-toggle-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+    }
+
+    /* Dashboard Grid Layout */
+    .dashboard-body {
+      display: grid;
+      grid-template-columns: 2.1fr 1fr;
+      gap: 1.5rem;
+      align-content: start;
+    }
+
+    .hero-card {
+      background: linear-gradient(135deg, #1e1b4b, #4338ca);
+      color: white;
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+      box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card.enterprise {
+      background: linear-gradient(135deg, #0f172a, #334155);
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+      border-radius: 50%;
+    }
+
+    .hero-content {
+      max-width: 440px;
+      z-index: 1;
+    }
+
+    .hero-content h2 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero-content p {
+      font-size: 0.95rem;
+      color: #e2e8f0;
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-btn {
+      background: white;
+      color: var(--text-main);
+      border: none;
+      border-radius: 9999px;
+      padding: 0.75rem 1.4rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .hero-btn:hover { background: #f8fafc; transform: translateY(-2px); }
+
+    .hero-graphic {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+      z-index: 1;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 1.5rem;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .side-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .side-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      cursor: pointer;
+      box-shadow: var(--card-shadow);
+      transition: all 0.2s ease;
+    }
+
+    .side-card:hover {
+      box-shadow: var(--card-shadow-hover);
+      transform: translateY(-2px);
+    }
+
+    .side-card-icon {
+      background: var(--primary-light);
+      color: var(--primary);
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .recommended-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+      gap: 0.85rem;
+      margin-top: 1rem;
+    }
+
+    .rec-card {
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 0.65rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 145px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .rec-card:hover {
+      background: var(--surface);
+      border-color: var(--primary);
+      box-shadow: var(--card-shadow-hover);
+      transform: translateY(-3px);
+    }
+
+    .filter-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .filter-select {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.875rem;
+      background: var(--surface);
+      cursor: pointer;
+      outline: none;
+    }
+
+    .card-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .job-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      box-shadow: var(--card-shadow);
+      position: relative;
+    }
+
+    .match-tag {
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-secondary { background: #f1f5f9; color: var(--text-muted); }
+
+    .action-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: auto;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 0.6rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      border: 1px solid var(--border);
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-action.primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+    }
+
+    .btn-action.primary:hover { background: var(--primary-hover); }
+
+    .btn-action.applied {
+      background: var(--success-light);
+      color: var(--success);
+      border-color: #a7f3d0;
+      cursor: default;
+    }
+
+    /* Forms */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      max-width: 720px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .form-group {
+      margin-bottom: 1.1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    /* Chat */
+    .chat-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      height: 600px;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+    }
+
+    .chat-user-list {
+      border-right: 1px solid var(--border);
+      background: #fafbfc;
+      overflow-y: auto;
+    }
+
+    .chat-user-item {
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chat-user-item.active { background: var(--primary-light); }
+
+    .chat-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #e0e7ff;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .chat-window {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .chat-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .chat-bubble {
+      max-width: 70%;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .chat-bubble.sent {
+      align-self: flex-end;
+      background: var(--primary);
+      color: white;
+      border-bottom-right-radius: 2px;
+    }
+
+    .chat-bubble.received {
+      align-self: flex-start;
+      background: #f1f5f9;
+      color: var(--text-main);
+      border-bottom-left-radius: 2px;
+    }
+
+    .chat-input-bar {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-box {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 580px;
+      padding: 2rem;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+      z-index: 200;
+    }
+
+    @media (max-width: 1024px) {
+      .app-layout { grid-template-columns: 80px 1fr; }
+      .sidebar-btn span, .sidebar-heading { display: none; }
+      .sidebar-btn { justify-content: center; padding: 0.8rem; }
+      .dashboard-body { grid-template-columns: 1fr; }
+      .chat-container { grid-template-columns: 1fr; }
+      .chat-user-list { display: none; }
+    }
+
+    @media (max-width: 768px) {
+      .header .nav-pill { display: none; }
+      .search-box { width: 140px; }
+      .app-layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .hero-card { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const { useState, useEffect } = React;
+
+  // Student Profiles Database
+  const DEFAULT_STUDENTS = [
+    {
+      id: "s1",
+      name: "Alex Parker",
+      domain: "Engineering",
+      headline: "Computer Engineering & React Specialist",
+      email: "alex@edu.org",
+      skills: [{ name: "React", score: 92 }, { name: "Python / Data Science", score: 88 }, { name: "Cloud & DevOps", score: 82 }],
+      certificates: ["Autonomous Robotics Workshop", "Algorithms Specialist"],
+      projects: ["Enterprise Co-existence Analyzer", "Relational Database Engine v2"],
+      status: "Actively Looking",
+      matchScore: 96
+    },
+    {
+      id: "s2",
+      name: "Priya Sharma",
+      domain: "Design",
+      headline: "Full-Stack Web & UX Specialist",
+      email: "priya.sharma@tech.edu",
+      skills: [{ name: "Figma UX", score: 95 }, { name: "JavaScript / React", score: 84 }, { name: "Prototyping", score: 90 }],
+      certificates: ["Google UX Certificate"],
+      projects: ["HealthTech Booking Portal", "Accessible UI System"],
+      status: "Available",
+      matchScore: 88
+    },
+    {
+      id: "s3",
+      name: "Rohan Varma",
+      domain: "Data Science",
+      headline: "Machine Learning & Quantitative Analytics",
+      email: "rohan.v@analytics.edu",
+      skills: [{ name: "Python / Data Science", score: 94 }, { name: "SQL & Databases", score: 90 }, { name: "Cloud & DevOps", score: 78 }],
+      certificates: ["Deep Learning Specialization", "AWS Certified Cloud Practitioner"],
+      projects: ["Predictive Sales Forecaster", "Neural OCR Engine"],
+      status: "Actively Looking",
+      matchScore: 92
+    },
+    {
+      id: "s4",
+      name: "Ananya Iyer",
+      domain: "Engineering",
+      headline: "Distributed Backend & Go Developer",
+      email: "ananya.i@polytech.edu",
+      skills: [{ name: "Cloud & DevOps", score: 91 }, { name: "Go / Microservices", score: 87 }, { name: "SQL & Databases", score: 85 }],
+      certificates: ["Kubernetes Application Developer"],
+      projects: ["High-Throughput Message Queue"],
+      status: "Interviewing",
+      matchScore: 84
+    }
+  ];
+
+  const DEFAULT_JOBS = [
+    { id: 1, title: "Full Stack Engineer", company: "CyberNexus Corp", type: "Full-Time Placement", domain: "Engineering", location: "Hybrid", exp: "Fresher", pay: "$80k-$100k/yr", applicants: ["Alex Parker"] },
+    { id: 2, title: "UI/UX Product Intern", company: "DesignVerse Studio", type: "Internship", domain: "Design", location: "Remote", exp: "Fresher", pay: "$35/hr", applicants: [] },
+    { id: 3, title: "Data Science Research Fellow", company: "CyberNexus Corp", type: "Industry Projects", domain: "Data Science", location: "Remote", exp: "1-3 Years", pay: "Stipend + Grant", applicants: ["Rohan Varma"] },
+  ];
+
+  function App() {
+    // Session State
+    const [currentUser, setCurrentUser] = useState(null);
+    const [authRole, setAuthRole] = useState("company"); // Default toggle set for demonstration
+    const [authForm, setAuthForm] = useState({
+      name: "",
+      email: "",
+      field: "Engineering",
+      requirements: "Looking for students with React, Python, or Cloud skills"
+    });
+
+    const [currentRoute, setCurrentRoute] = useState("Home");
+    const [toastMessage, setToastMessage] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [students, setStudents] = useState(DEFAULT_STUDENTS);
+    const [jobs, setJobs] = useState(DEFAULT_JOBS);
+    const [myApplications, setMyApplications] = useState([]);
+
+    // Candidate evaluation modal
+    const [inspectStudent, setInspectStudent] = useState(null);
+
+    // Chat System State
+    const [activeChatTarget, setActiveChatTarget] = useState(null);
+    const [chatInput, setChatInput] = useState("");
+    const [chatHistory, setChatHistory] = useState({
+      "Alex Parker": [
+        { sender: "CyberNexus Corp", text: "Hello Alex! We evaluated your verified skill badges and would like to invite you for an interview." },
+        { sender: "Alex Parker", text: "Thank you! I am very interested in this opportunity." }
+      ]
+    });
+
+    // Quiz State for Student Assessment
+    const [quizModalOpen, setQuizModalOpen] = useState(false);
+    const [quizSkill, setQuizSkill] = useState("");
+    const [quizQuestionIndex, setQuizQuestionIndex] = useState(0);
+    const [quizScore, setQuizScore] = useState(0);
+
+    // Enterprise Post Job Form
+    const [newJob, setNewJob] = useState({
+      title: "",
+      type: "Internship",
+      domain: "Engineering",
+      location: "Remote",
+      exp: "Fresher",
+      pay: "$40/hr"
+    });
+
+    // Enterprise Matching Requirement Filter
+    const [requiredSkillFilter, setRequiredSkillFilter] = useState("All");
+
+    const showToast = (msg) => {
+      setToastMessage(msg);
+      setTimeout(() => setToastMessage(""), 3000);
+    };
+
+    useEffect(() => {
+      if (window.lucide) window.lucide.createIcons();
+    }, [currentUser, currentRoute, authRole, activeChatTarget, inspectStudent, quizModalOpen]);
+
+    // Handle Login / Registration
+    const handleAuthSubmit = (e) => {
+      e.preventDefault();
+      if (!authForm.email || !authForm.name) {
+        showToast("Please fill in all details");
+        return;
+      }
+      
+      const sessionUser = {
+        role: authRole,
+        name: authForm.name,
+        email: authForm.email,
+        field: authForm.field || "Engineering",
+        requirements: authForm.requirements || "React, Cloud, Data Science",
+        certificates: ["Verified SkillBridge Member"],
+        skills: [{ name: "Web Development", score: 85 }, { name: "System Design", score: 80 }]
+      };
+
+      setCurrentUser(sessionUser);
+      showToast(`Welcome, ${sessionUser.name}!`);
+      setCurrentRoute("Home");
+    };
+
+    const handleSendMessage = () => {
+      if (!chatInput.trim() || !activeChatTarget) return;
+      const targetName = activeChatTarget.name;
+      const existing = chatHistory[targetName] || [];
+      const updated = [...existing, { sender: currentUser.name, text: chatInput }];
+      
+      setChatHistory({ ...chatHistory, [targetName]: updated });
+      setChatInput("");
+    };
+
+    const handlePostJob = (e) => {
+      e.preventDefault();
+      if (!newJob.title) return;
+      const created = {
+        id: Date.now(),
+        ...newJob,
+        company: currentUser.name,
+        applicants: []
+      };
+      setJobs([created, ...jobs]);
+      showToast("New opportunity posted to student talent pool!");
+      setNewJob({ title: "", type: "Internship", domain: "Engineering", location: "Remote", exp: "Fresher", pay: "$40/hr" });
+    };
+
+    // Calculate smart recommended candidates for enterprises
+    const getRecommendedCandidates = () => {
+      return students.filter(s => {
+        const matchesSkill = requiredSkillFilter === "All" || s.skills.some(sk => sk.name.toLowerCase().includes(requiredSkillFilter.toLowerCase()));
+        const matchesDomain = currentUser.field === "All" || s.domain === currentUser.field || true;
+        return matchesSkill && matchesDomain;
+      });
+    };
+
+    // 1. AUTHENTICATION VIEW
+    if (!currentUser) {
+      return (
+        <div className="auth-overlay">
+          <div className="auth-card">
+            <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+              <div className="brand-logo" style={{ margin: "0 auto 12px" }}>SB</div>
+              <h2 style={{ fontSize: "1.5rem", fontWeight: 800 }}>Welcome to SkillBridge</h2>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.88rem" }}>
+                Select your portal role to continue
+              </p>
+            </div>
+
+            <div className="role-toggle">
+              <button
+                className={`role-toggle-btn ${authRole === "company" ? "active" : ""}`}
+                onClick={() => setAuthRole("company")}
+              >
+                Enterprise / Company
+              </button>
+              <button
+                className={`role-toggle-btn ${authRole === "student" ? "active" : ""}`}
+                onClick={() => setAuthRole("student")}
+              >
+                Student / Talent
+              </button>
+            </div>
+
+            <form onSubmit={handleAuthSubmit}>
+              <div className="form-group">
+                <label>{authRole === "company" ? "Enterprise / Company Name" : "Full Name"}</label>
+                <input
+                  type="text"
+                  required
+                  placeholder={authRole === "company" ? "e.g. CyberNexus Labs" : "e.g. Alex Parker"}
+                  value={authForm.name}
+                  onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Work Email</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="contact@company.com"
+                  value={authForm.email}
+                  onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                />
+              </div>
+
+              {authRole === "company" ? (
+                <>
+                  <div className="form-group">
+                    <label>Primary Hiring Domain</label>
+                    <select
+                      value={authForm.field}
+                      onChange={(e) => setAuthForm({ ...authForm, field: e.target.value })}
+                    >
+                      <option value="Engineering">Engineering & Cloud</option>
+                      <option value="Data Science">Data Science & AI</option>
+                      <option value="Design">UI/UX & Product Design</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Current Candidate Skill Requirements</label>
+                    <textarea
+                      rows="2"
+                      placeholder="e.g. Seeking engineers with strong React, Python, or Cloud certification..."
+                      value={authForm.requirements}
+                      onChange={(e) => setAuthForm({ ...authForm, requirements: e.target.value })}
+                    ></textarea>
+                  </div>
+                </>
+              ) : (
+                <div className="form-group">
+                  <label>Professional Bio / Headline</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Computer Science Student | Specializing in React & Data Science"
+                    value={authForm.requirements}
+                    onChange={(e) => setAuthForm({ ...authForm, requirements: e.target.value })}
+                  />
+                </div>
+              )}
+
+              <button type="submit" className="btn-action primary" style={{ width: "100%", padding: "0.85rem", marginTop: "1rem" }}>
+                Sign In as {authRole === "company" ? "Enterprise Recruiter" : "Student"}
+              </button>
+            </form>
+          </div>
+          {toastMessage && <div className="toast">{toastMessage}</div>}
+        </div>
+      );
+    }
+
+    const isEnterprise = currentUser.role === "company";
+
+    // 2. MAIN APPLICATION
+    return (
+      <>
+        {/* Navbar */}
+        <header className="header">
+          <div className="nav-container">
+            <div className="brand-section" onClick={() => setCurrentRoute("Home")}>
+              <div className="brand-logo">SB</div>
+              <div className="brand-title">SkillBridge</div>
+            </div>
+
+            <div className="nav-pill">
+              {isEnterprise ? (
+                ["Dashboard", "Candidate Match", "Post Openings", "Applicants"].map((item) => (
+                  <button
+                    key={item}
+                    className={`nav-item ${currentRoute === item || (item === "Dashboard" && currentRoute === "Home") ? "active" : ""}`}
+                    onClick={() => setCurrentRoute(item === "Dashboard" ? "Home" : item === "Candidate Match" ? "Candidates" : item === "Post Openings" ? "Manage Jobs" : "Applicants")}
+                  >
+                    {item}
+                  </button>
+                ))
+              ) : (
+                ["Home", "Skill Mapping", "Internships", "Placements"].map((item) => (
+                  <button
+                    key={item}
+                    className={`nav-item ${currentRoute === item ? "active" : ""}`}
+                    onClick={() => setCurrentRoute(item)}
+                  >
+                    {item}
+                  </button>
+                ))
+              )}
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div className="search-box">
+                <i data-lucide="search" style={{ width: 16, height: 16, color: "#64748b" }}></i>
+                <input
+                  type="text"
+                  placeholder={isEnterprise ? "Search candidates..." : "Search opportunities..."}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <div className="user-pill">
+                <span className={`user-role-badge ${isEnterprise ? "badge-enterprise" : "badge-student"}`}>
+                  {isEnterprise ? "Enterprise" : "Student"}
+                </span>
+                <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>{currentUser.name}</span>
+                <button className="logout-btn" onClick={() => { setCurrentUser(null); showToast("Logged out successfully"); }}>
+                  <i data-lucide="log-out" style={{ width: 14, height: 14 }}></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="app-layout">
+          {/* Sidebar */}
+          <aside className="sidebar">
+            <div className="sidebar-heading">{isEnterprise ? "Recruiter Suite" : "Student Menu"}</div>
+            
+            <button className={`sidebar-btn ${currentRoute === "Home" ? "active" : ""}`} onClick={() => setCurrentRoute("Home")}>
+              <i data-lucide="home" style={{ width: 18, height: 18 }}></i>
+              <span>{isEnterprise ? "Recruiter Hub" : "Home"}</span>
+            </button>
+            <button className={`sidebar-btn ${currentRoute === "Profile" ? "active" : ""}`} onClick={() => setCurrentRoute("Profile")}>
+              <i data-lucide="user" style={{ width: 18, height: 18 }}></i>
+              <span>{isEnterprise ? "Company Profile" : "Profile"}</span>
+            </button>
+
+            {isEnterprise ? (
+              <>
+                <button className={`sidebar-btn ${currentRoute === "Candidates" ? "active" : ""}`} onClick={() => setCurrentRoute("Candidates")}>
+                  <i data-lucide="users" style={{ width: 18, height: 18 }}></i>
+                  <span>Talent Recommendations</span>
+                </button>
+                <button className={`sidebar-btn ${currentRoute === "Manage Jobs" ? "active" : ""}`} onClick={() => setCurrentRoute("Manage Jobs")}>
+                  <i data-lucide="briefcase" style={{ width: 18, height: 18 }}></i>
+                  <span>Manage Postings</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button className={`sidebar-btn ${currentRoute === "Skill Mapping" ? "active" : ""}`} onClick={() => setCurrentRoute("Skill Mapping")}>
+                  <i data-lucide="crosshair" style={{ width: 18, height: 18 }}></i>
+                  <span>Skill Assessments</span>
+                </button>
+                <button className={`sidebar-btn ${currentRoute === "Internships" ? "active" : ""}`} onClick={() => setCurrentRoute("Internships")}>
+                  <i data-lucide="briefcase" style={{ width: 18, height: 18 }}></i>
+                  <span>Browse Jobs</span>
+                </button>
+              </>
+            )}
+
+            <button className={`sidebar-btn ${currentRoute === "Messages" ? "active" : ""}`} onClick={() => setCurrentRoute("Messages")}>
+              <i data-lucide="message-square" style={{ width: 18, height: 18 }}></i>
+              <span>Direct Messages</span>
+            </button>
+          </aside>
+
+          {/* Dynamic Content Views */}
+          <main className="content-area">
+            {/* VIEW 1: HOME DASHBOARD */}
+            {currentRoute === "Home" && (
+              <div className="dashboard-body">
+                {/* Hero */}
+                <section className={`hero-card ${isEnterprise ? "enterprise" : ""}`}>
+                  <div className="hero-content">
+                    <h2>{isEnterprise ? `Welcome back, ${currentUser.name}` : "Welcome to SkillBridge"}</h2>
+                    <p>
+                      {isEnterprise
+                        ? `Targeting ${currentUser.field} talent. Review candidates with verified test benchmarks matching your hiring criteria.`
+                        : "Bridging the gap between academia and industry for a skilled tomorrow."}
+                    </p>
+                    <button
+                      className="hero-btn"
+                      onClick={() => setCurrentRoute(isEnterprise ? "Candidates" : "Internships")}
+                    >
+                      {isEnterprise ? "Review Top Student Matches" : "Explore Opportunities"}
+                      <i data-lucide="arrow-right" style={{ width: 16, height: 16 }}></i>
+                    </button>
+                  </div>
+                  <div className="hero-graphic">
+                    <i data-lucide={isEnterprise ? "building-2" : "graduation-cap"} style={{ width: 44, height: 44 }}></i>
+                    <i data-lucide="handshake" style={{ width: 44, height: 44 }}></i>
+                  </div>
+                </section>
+
+                {/* Right Stack */}
+                <div className="side-stack">
+                  <div className="side-card" onClick={() => setCurrentRoute(isEnterprise ? "Candidates" : "Messages")}>
+                    <div className="side-card-icon">
+                      <i data-lucide={isEnterprise ? "user-check" : "building-2"} style={{ width: 22, height: 22 }}></i>
+                    </div>
+                    <div className="side-card-content">
+                      <h4>{isEnterprise ? "Scouted Candidate Matches" : "Direct Enterprise Chat"}</h4>
+                      <p>{isEnterprise ? `${students.length} pre-screened students available` : "Connect and exchange proposals"}</p>
+                    </div>
+                    <i data-lucide="arrow-right" style={{ width: 18, height: 18, color: "var(--text-muted)" }}></i>
+                  </div>
+
+                  <div className="side-card" onClick={() => setCurrentRoute(isEnterprise ? "Manage Jobs" : "Internships")}>
+                    <div className="side-card-icon">
+                      <i data-lucide="megaphone" style={{ width: 22, height: 22 }}></i>
+                    </div>
+                    <div className="side-card-content">
+                      <h4>{isEnterprise ? "Post New Opening" : "Latest Opportunities"}</h4>
+                      <p>{isEnterprise ? "Publish jobs, internships, or live industry projects" : "Fresh internships and jobs"}</p>
+                    </div>
+                    <i data-lucide="arrow-right" style={{ width: 18, height: 18, color: "var(--text-muted)" }}></i>
+                  </div>
+                </div>
+
+                {/* RECOMMENDED SECTION (DYNAMIC BY ROLE) */}
+                <section className="recommended-container">
+                  <h3>{isEnterprise ? "Enterprise Talent Workflows" : "Recommended Opportunities"}</h3>
+                  <div className="cards-grid">
+                    {(isEnterprise ? [
+                      { title: "Candidate Match", icon: "sparkles", route: "Candidates" },
+                      { title: "Post Openings", icon: "plus-circle", route: "Manage Jobs" },
+                      { title: "Talent Directory", icon: "users", route: "Candidates" },
+                      { title: "Offer Letters", icon: "file-check", route: "Manage Jobs" },
+                      { title: "Campus Outreach", icon: "graduation-cap", route: "Candidates" },
+                      { title: "Interview Chat", icon: "message-square", route: "Messages" },
+                    ] : [
+                      { title: "Skill Mapping", icon: "file-text", route: "Skill Mapping" },
+                      { title: "Internships", icon: "graduation-cap", route: "Internships" },
+                      { title: "Placements", icon: "briefcase", route: "Placements" },
+                      { title: "Projects", icon: "folder-kanban", route: "Internships" },
+                      { title: "Assessments", icon: "check-circle", route: "Skill Mapping" },
+                      { title: "Messages", icon: "message-circle", route: "Messages" },
+                    ]).map((item, idx) => (
+                      <button key={idx} className="rec-card" onClick={() => setCurrentRoute(item.route)}>
+                        <div style={{ background: "var(--primary-light)", color: "var(--primary)", padding: 10, borderRadius: 10 }}>
+                          <i data-lucide={item.icon} style={{ width: 22, height: 22 }}></i>
+                        </div>
+                        <span style={{ fontSize: "0.8rem", fontWeight: 600 }}>{item.title}</span>
+                        <i data-lucide="arrow-right" style={{ width: 14, height: 14, color: "#64748b" }}></i>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                {/* FILTERS / REQUIREMENT MATCHER */}
+                <aside className="filter-box">
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700 }}>
+                    <i data-lucide="sliders-horizontal" style={{ width: 18, height: 18 }}></i>
+                    <span>{isEnterprise ? "Match Candidates By" : "Search Filters"}</span>
+                  </div>
+
+                  {isEnterprise ? (
+                    <>
+                      <div>
+                        <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)" }}>Target Skill Requirement</label>
+                        <select className="filter-select" value={requiredSkillFilter} onChange={(e) => setRequiredSkillFilter(e.target.value)}>
+                          <option value="All">All Verified Skills</option>
+                          <option value="React">React & Frontend</option>
+                          <option value="Python">Python & Machine Learning</option>
+                          <option value="Cloud">Cloud & DevOps</option>
+                          <option value="UX">UX & Product Design</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)" }}>Candidate Status</label>
+                        <select className="filter-select">
+                          <option>Actively Looking</option>
+                          <option>Available for Internships</option>
+                          <option>Immediate Joiners</option>
+                        </select>
+                      </div>
+
+                      <button
+                        className="btn-action primary"
+                        style={{ marginTop: 8 }}
+                        onClick={() => { setCurrentRoute("Candidates"); showToast("Updated candidate recommendations!"); }}
+                      >
+                        Refresh Recommended Talent
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)" }}>Domain</label>
+                        <select className="filter-select">
+                          <option>All Domains</option>
+                          <option>Engineering</option>
+                          <option>Design</option>
+                          <option>Data Science</option>
+                        </select>
+                      </div>
+                      <button
+                        className="btn-action primary"
+                        style={{ marginTop: 8 }}
+                        onClick={() => { setCurrentRoute("Internships"); showToast("Filters applied!"); }}
+                      >
+                        Browse Roles
+                      </button>
+                    </>
+                  )}
+                </aside>
+              </div>
+            )}
+
+            {/* VIEW 2: CANDIDATE SCOUTING & SMART RECOMMENDATIONS */}
+            {currentRoute === "Candidates" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem" }}>
+                  <div>
+                    <h2 style={{ fontSize: "1.6rem", fontWeight: 800 }}>Smart Student Recommendations</h2>
+                    <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+                      Ranked by verified benchmark test scores and compatibility with your company requirements ({currentUser.requirements}).
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>Filter by Skill:</span>
+                    <select
+                      className="filter-select"
+                      style={{ width: "auto" }}
+                      value={requiredSkillFilter}
+                      onChange={(e) => setRequiredSkillFilter(e.target.value)}
+                    >
+                      <option value="All">All Skills</option>
+                      <option value="React">React</option>
+                      <option value="Python">Python</option>
+                      <option value="Cloud">Cloud</option>
+                      <option value="UX">UX Design</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="card-list">
+                  {getRecommendedCandidates().map((student) => (
+                    <div key={student.id} className="job-card">
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <h4 style={{ fontSize: "1.1rem", fontWeight: 800 }}>{student.name}</h4>
+                        <span className="match-tag">
+                          <i data-lucide="sparkles" style={{ width: 12, height: 12 }}></i> {student.matchScore}% Match
+                        </span>
+                      </div>
+                      <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>{student.headline}</p>
+
+                      <div>
+                        <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+                          Verified Assessment Scores:
+                        </span>
+                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: 4 }}>
+                          {student.skills.map((s, i) => (
+                            <span key={i} className="badge badge-secondary">{s.name}: {s.score}%</span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="action-row">
+                        <button className="btn-action" onClick={() => setInspectStudent(student)}>
+                          <i data-lucide="eye" style={{ width: 14, height: 14 }}></i> Evaluate Portfolio
+                        </button>
+                        <button
+                          className="btn-action primary"
+                          onClick={() => {
+                            setActiveChatTarget(student);
+                            setCurrentRoute("Messages");
+                          }}
+                        >
+                          <i data-lucide="message-square" style={{ width: 14, height: 14 }}></i> Message Candidate
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 3: MANAGE POSTINGS & APPLICANTS */}
+            {(currentRoute === "Manage Jobs" || currentRoute === "Applicants") && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: "2rem" }}>
+                <div className="form-card">
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 800, marginBottom: "1rem" }}>Publish Job or Internship</h3>
+                  <form onSubmit={handlePostJob}>
+                    <div className="form-group">
+                      <label>Opening Title</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Associate Cloud Developer"
+                        value={newJob.title}
+                        onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Employment Type</label>
+                      <select value={newJob.type} onChange={(e) => setNewJob({ ...newJob, type: e.target.value })}>
+                        <option>Internship</option>
+                        <option>Full-Time Placement</option>
+                        <option>Industry Projects</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Domain</label>
+                      <select value={newJob.domain} onChange={(e) => setNewJob({ ...newJob, domain: e.target.value })}>
+                        <option>Engineering</option>
+                        <option>Design</option>
+                        <option>Data Science</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Stipend / Annual Salary</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. $45/hr or $90,000/yr"
+                        value={newJob.pay}
+                        onChange={(e) => setNewJob({ ...newJob, pay: e.target.value })}
+                      />
+                    </div>
+                    <button type="submit" className="btn-action primary" style={{ width: "100%", padding: "0.8rem" }}>
+                      Publish Role to Students
+                    </button>
+                  </form>
+                </div>
+
+                <div>
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 800, marginBottom: "1rem" }}>Active Postings & Student Submissions</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    {jobs.filter(j => j.company === currentUser.name).map((job) => (
+                      <div key={job.id} className="job-card">
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <h4 style={{ fontWeight: 800 }}>{job.title}</h4>
+                          <span className="badge">{job.type}</span>
+                        </div>
+                        <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>{job.domain} • {job.location} • {job.pay}</p>
+                        
+                        <div style={{ background: "#f8fafc", padding: "10px 14px", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                          <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>Student Applicants ({job.applicants.length}):</span>
+                          {job.applicants.length === 0 ? (
+                            <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 4 }}>No student submissions yet.</p>
+                          ) : (
+                            job.applicants.map((name, i) => (
+                              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
+                                <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>{name}</span>
+                                <button
+                                  className="btn-action primary"
+                                  style={{ padding: "4px 10px", fontSize: "0.75rem" }}
+                                  onClick={() => {
+                                    const targetStudent = students.find(s => s.name === name) || { name };
+                                    setActiveChatTarget(targetStudent);
+                                    setCurrentRoute("Messages");
+                                  }}
+                                >
+                                  Interview in Chat
+                                </button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 4: BROWSE JOBS (STUDENTS ONLY) */}
+            {(["Internships", "Placements"].includes(currentRoute)) && (
+              <div>
+                <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: "1.2rem" }}>Open Enterprise Opportunities</h2>
+                <div className="card-list">
+                  {jobs.map((job) => {
+                    const isApplied = myApplications.includes(job.id);
+                    return (
+                      <div key={job.id} className="job-card">
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <div>
+                            <h4 style={{ fontWeight: 800, fontSize: "1.1rem" }}>{job.title}</h4>
+                            <p style={{ color: "var(--primary)", fontWeight: 700, fontSize: "0.85rem" }}>{job.company}</p>
+                          </div>
+                          <span className="badge">{job.pay}</span>
+                        </div>
+                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                          <span className="badge badge-secondary">{job.domain}</span>
+                          <span className="badge badge-secondary">{job.location}</span>
+                          <span className="badge badge-secondary">{job.type}</span>
+                        </div>
+                        <div className="action-row">
+                          <button
+                            className={`btn-action ${isApplied ? "applied" : "primary"}`}
+                            onClick={() => {
+                              if (!isApplied) {
+                                setJobs(jobs.map(j => j.id === job.id ? { ...j, applicants: [...j.applicants, currentUser.name] } : j));
+                                setMyApplications([...myApplications, job.id]);
+                                showToast(`Applied to ${job.title}!`);
+                              }
+                            }}
+                          >
+                            {isApplied ? "✓ Application Sent" : "Apply Now"}
+                          </button>
+                          <button
+                            className="btn-action"
+                            onClick={() => {
+                              setActiveChatTarget({ name: job.company });
+                              setCurrentRoute("Messages");
+                            }}
+                          >
+                            <i data-lucide="message-circle" style={{ width: 14, height: 14 }}></i> Message Company
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 5: SKILL ASSESSMENTS (STUDENTS ONLY) */}
+            {currentRoute === "Skill Mapping" && (
+              <div>
+                <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.4rem" }}>Verified Skill Benchmarks</h2>
+                <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+                  Take assessments to increase your match percentage with corporate recruiters.
+                </p>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.2rem" }}>
+                  {currentUser.skills && currentUser.skills.map((skill, idx) => (
+                    <div key={idx} className="job-card">
+                      <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
+                        <span>{skill.name}</span>
+                        <span style={{ color: "var(--primary)" }}>{skill.score}% Verified</span>
+                      </div>
+                      <div style={{ background: "#e2e8f0", height: 8, borderRadius: 999, overflow: "hidden" }}>
+                        <div style={{ background: "var(--primary)", width: `${skill.score}%`, height: "100%" }}></div>
+                      </div>
+                      <button
+                        className="btn-action primary"
+                        style={{ marginTop: 10 }}
+                        onClick={() => showToast(`Opening exam test for ${skill.name}...`)}
+                      >
+                        Retake Assessment Test
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 6: DIRECT CHAT */}
+            {currentRoute === "Messages" && (
+              <div>
+                <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: "1rem" }}>Direct Communications</h2>
+                <div className="chat-container">
+                  <div className="chat-user-list">
+                    <div style={{ padding: "1rem", fontWeight: 700, borderBottom: "1px solid var(--border)" }}>Active Conversations</div>
+                    {Object.keys(chatHistory).map((userKey) => (
+                      <div
+                        key={userKey}
+                        className={`chat-user-item ${activeChatTarget && activeChatTarget.name === userKey ? "active" : ""}`}
+                        onClick={() => setActiveChatTarget({ name: userKey })}
+                      >
+                        <div className="chat-avatar">{userKey.charAt(0)}</div>
+                        <div>
+                          <p style={{ fontWeight: 700, fontSize: "0.88rem" }}>{userKey}</p>
+                          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Click to view chat</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="chat-window">
+                    <div className="chat-header">
+                      <span>Chat with: <strong>{activeChatTarget ? activeChatTarget.name : "Select a contact"}</strong></span>
+                    </div>
+
+                    <div className="chat-messages">
+                      {activeChatTarget && chatHistory[activeChatTarget.name] ? (
+                        chatHistory[activeChatTarget.name].map((msg, i) => (
+                          <div
+                            key={i}
+                            className={`chat-bubble ${msg.sender === currentUser.name ? "sent" : "received"}`}
+                          >
+                            <p style={{ fontSize: "0.7rem", opacity: 0.8, marginBottom: 2 }}>{msg.sender}</p>
+                            {msg.text}
+                          </div>
+                        ))
+                      ) : (
+                        <p style={{ color: "var(--text-muted)", textAlign: "center", marginTop: "4rem" }}>
+                          No conversation selected. Click on a candidate or recruiter to start communicating.
+                        </p>
+                      )}
+                    </div>
+
+                    {activeChatTarget && (
+                      <div className="chat-input-bar">
+                        <input
+                          type="text"
+                          placeholder="Type your message..."
+                          style={{ flex: 1, padding: "0.75rem", borderRadius: 8, border: "1px solid var(--border)", outline: "none" }}
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                        />
+                        <button className="btn-action primary" style={{ width: "100px" }} onClick={handleSendMessage}>
+                          Send
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 7: PROFILE */}
+            {currentRoute === "Profile" && (
+              <div className="form-card">
+                <h2 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "1.2rem" }}>
+                  {isEnterprise ? "Company Profile & Requirements" : "Candidate Profile & Portfolio"}
+                </h2>
+                
+                <div className="form-group">
+                  <label>{isEnterprise ? "Enterprise Legal Name" : "Full Name"}</label>
+                  <input
+                    type="text"
+                    value={currentUser.name}
+                    onChange={(e) => setCurrentUser({ ...currentUser, name: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{isEnterprise ? "Industry Domain" : "Headline"}</label>
+                  <input
+                    type="text"
+                    value={isEnterprise ? currentUser.field : currentUser.headline}
+                    onChange={(e) => setCurrentUser({ ...currentUser, [isEnterprise ? "field" : "headline"]: e.target.value })}
+                  />
+                </div>
+
+                {isEnterprise ? (
+                  <div className="form-group">
+                    <label>Enterprise Skill Requirements (Used for Candidate Recommendations)</label>
+                    <textarea
+                      rows="3"
+                      value={currentUser.requirements}
+                      onChange={(e) => setCurrentUser({ ...currentUser, requirements: e.target.value })}
+                    ></textarea>
+                  </div>
+                ) : (
+                  <div className="form-group">
+                    <label>Verified Certificates</label>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "8px" }}>
+                      {currentUser.certificates && currentUser.certificates.map((cert, i) => (
+                        <span key={i} className="badge">{cert}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button className="btn-action primary" onClick={() => showToast("Profile changes saved!")}>
+                  Save Settings
+                </button>
+              </div>
+            )}
+          </main>
+        </div>
+
+        {/* EVALUATE STUDENT MODAL */}
+        {inspectStudent && (
+          <div className="modal-overlay" onClick={() => setInspectStudent(null)}>
+            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <h3 style={{ fontSize: "1.4rem", fontWeight: 800 }}>{inspectStudent.name}</h3>
+                  <p style={{ color: "var(--primary)", fontWeight: 600, fontSize: "0.9rem" }}>{inspectStudent.headline}</p>
+                </div>
+                <span className="match-tag"><i data-lucide="sparkles" style={{ width: 12, height: 12 }}></i> {inspectStudent.matchScore}% Match</span>
+              </div>
+
+              <div style={{ marginTop: "1rem", marginBottom: "1rem" }}>
+                <h5 style={{ fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase" }}>Verified Skills & Exam Ratings:</h5>
+                <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                  {inspectStudent.skills.map((s, i) => (
+                    <span key={i} className="badge">{s.name}: {s.score}%</span>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                <h5 style={{ fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase" }}>Key Projects:</h5>
+                <ul style={{ paddingLeft: 20, fontSize: "0.85rem", color: "var(--text-muted)", marginTop: 4 }}>
+                  {inspectStudent.projects.map((proj, i) => <li key={i}>{proj}</li>)}
+                </ul>
+              </div>
+
+              <div style={{ marginBottom: "1.5rem" }}>
+                <h5 style={{ fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase" }}>Workshops & Certifications:</h5>
+                <ul style={{ paddingLeft: 20, fontSize: "0.85rem", color: "var(--text-muted)", marginTop: 4 }}>
+                  {inspectStudent.certificates.map((cert, i) => <li key={i}>{cert}</li>)}
+                </ul>
+              </div>
+
+              <div className="action-row">
+                <button
+                  className="btn-action primary"
+                  onClick={() => {
+                    setActiveChatTarget(inspectStudent);
+                    setInspectStudent(null);
+                    setCurrentRoute("Messages");
+                  }}
+                >
+                  Schedule Interview & Chat
+                </button>
+                <button className="btn-action" onClick={() => setInspectStudent(null)}>Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {toastMessage && <div className="toast">{toastMessage}</div>}
+      </>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+</body>
+</html>
