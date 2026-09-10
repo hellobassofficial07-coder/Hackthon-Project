@@ -1,0 +1,7 @@
+npx cloudflared tunnel --url http://localhost:8080
+
+ https://shake-inn-ranger-eye.trycloudflare.com   
+5zyq0MlZSvqvkrwk : Supabase Password
+
+sb_publishable_1jzWfwvAcgy4m0Bu3gsr4Q_zlIbGR53 : anon/public key
+https://bqyzpmzzdqaiixpesgsq.supabase.co : Project URL
