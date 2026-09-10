@@ -5,3 +5,4 @@ npx cloudflared tunnel --url http://localhost:8080
 
 sb_publishable_1jzWfwvAcgy4m0Bu3gsr4Q_zlIbGR53 : anon/public key
 https://bqyzpmzzdqaiixpesgsq.supabase.co : Project URL
+https://bqyzpmzzdqaiixpesgsq.supabase.co/rest/v1/

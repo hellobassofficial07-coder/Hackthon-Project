@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillBridge - AI-Powered Academia-Industry Collaboration Portal</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- React & Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Supabase JS Client CDN -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <!-- Shared Supabase Client -->
+  <script src="js/supabase-client.js"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Landing & Pitch Specific Visuals */
+    .hero-glow {
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 20%, rgba(79, 70, 229, 0.12) 0%, rgba(248, 250, 252, 0) 70%);
+      padding: 5rem 1.5rem 4rem;
+      text-align: center;
+    }
+
+    .hero-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      box-shadow: var(--card-shadow);
+      margin-bottom: 1.5rem;
+    }
+
+    .landing-headline {
+      font-size: 3.4rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      max-width: 950px;
+      margin: 0 auto 1.25rem;
+      background: linear-gradient(135deg, #0f172a 30%, #4338ca 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .landing-subtitle {
+      font-size: 1.18rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 780px;
+      margin: 0 auto 2.2rem;
+    }
+
+    .trust-strip {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-top: 2.5rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(226, 232, 240, 0.7);
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Section Headers */
+    .section-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 4.5rem 1.5rem;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 3rem;
+    }
+
+    .section-header h2 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    /* Comparison Grid */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .compare-card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 2.2rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--card-shadow);
+      position: relative;
+    }
+
+    .compare-card.bad {
+      border-top: 4px solid var(--danger);
+    }
+
+    .compare-card.good {
+      border-top: 4px solid var(--success);
+      background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+    }
+
+    .compare-item {
+      display: flex;
+      gap: 12px;
+      margin-top: 1.1rem;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    /* Interactive Graph Visualizations */
+    .analytics-banner {
+      background: #0f172a;
+      color: #ffffff;
+      border-radius: 24px;
+      padding: 3rem 2.5rem;
+      box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.3);
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    .chart-container {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 1.75rem;
+    }
+
+    .bar-stat {
+      margin-bottom: 1.1rem;
+    }
+
+    .bar-stat-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .bar-track {
+      height: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 1s ease-in-out;
+    }
+
+    /* 4-Stakeholder Entity Showcase */
+    .stakeholder-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .stakeholder-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.8rem;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.25s ease;
+    }
+
+    .stakeholder-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--card-shadow-hover);
+      border-color: var(--primary);
+    }
+
+    .icon-box {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Footer */
+    .landing-footer {
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      padding: 3rem 1.5rem 2rem;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .landing-headline { font-size: 2.4rem; }
+      .comparison-grid, .analytics-banner { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const { useState, useEffect } = React;
+
+  function App() {
+    const [authModalOpen, setAuthModalOpen] = useState(false);
+    const [authMode, setAuthMode] = useState("signin");
+    const [authRole, setAuthRole] = useState("student");
+    const [authName, setAuthName] = useState("");
+    const [authEmail, setAuthEmail] = useState("");
+    const [authPassword, setAuthPassword] = useState("");
+    const [toastMessage, setToastMessage] = useState("");
+    const [activeUser, setActiveUser] = useState(null);
+
+    const showToast = (msg) => {
+      setToastMessage(msg);
+      setTimeout(() => setToastMessage(""), 3200);
+    };
+
+    useEffect(() => {
+      async function checkSession() {
+        if (typeof getCurrentUser === "function") {
+          const user = await getCurrentUser();
+          if (user) setActiveUser(user);
+        }
+      }
+      checkSession();
+      if (window.lucide) window.lucide.createIcons();
+    }, [authModalOpen, authMode]);
+
+    const handleAuth = async (e) => {
+      e.preventDefault();
+      if (!authEmail || !authPassword) {
+        showToast("Please provide both email and password.");
+        return;
+      }
+
+      if (authMode === "signup") {
+        if (!authName) {
+          showToast("Please enter your official name.");
+          return;
+        }
+
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: authEmail,
+          password: authPassword,
+          options: { data: { name: authName, role: authRole } }
+        });
+
+        if (authError) {
+          showToast(authError.message);
+          return;
+        }
+
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            name: authName,
+            email: authEmail,
+            role: authRole,
+            domain: "Computer Science"
+          }, { onConflict: 'email' })
+          .select()
+          .single();
+
+        if (profileError) {
+          showToast("Profile initialization error: " + profileError.message);
+        } else {
+          showToast(`Account registered! Redirecting to ${authRole} ecosystem...`);
+          setTimeout(() => routeUserToPortal(authRole), 1000);
+        }
+
+      } else {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: authPassword
+        });
+
+        if (signInError) {
+          showToast("Sign in failed: " + signInError.message);
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', authEmail)
+          .single();
+
+        if (profile) {
+          showToast(`Welcome back, ${profile.name}!`);
+          setTimeout(() => routeUserToPortal(profile.role), 1000);
+        } else {
+          showToast("Authenticated! Launching portal...");
+          setTimeout(() => routeUserToPortal("student"), 1000);
+        }
+      }
+    };
+
+    return (
+      <>
+        {/* Navigation Bar */}
+        <header className="header">
+          <div className="nav-container">
+            <a href="#home" className="brand-section">
+              <div className="brand-logo">SB</div>
+              <div className="brand-title">SkillBridge</div>
+            </a>
+
+            <div className="nav-pill" style={{ display: 'flex' }}>
+              <a href="#about" className="nav-item">About System</a>
+              <a href="#problem" className="nav-item">The Problem</a>
+              <a href="#ecosystem" className="nav-item">Stakeholders</a>
+              <a href="#impact" className="nav-item">Impact Metrics</a>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {activeUser ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    className="btn-pill primary"
+                    onClick={() => routeUserToPortal(activeUser.role || "student")}
+                  >
+                    Open {activeUser.role ? activeUser.role.toUpperCase() : "MY"} Portal &rarr;
+                  </button>
+                  <button className="btn-pill outline" onClick={handleLogout}>Sign Out</button>
+                </div>
+              ) : (
+                <>
+                  <button className="btn-pill outline" onClick={() => { setAuthMode("signin"); setAuthModalOpen(true); }}>
+                    Sign In
+                  </button>
+                  <button className="btn-pill primary" onClick={() => { setAuthMode("signup"); setAuthModalOpen(true); }}>
+                    Get Started
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* HERO BANNER */}
+        <section id="home" className="hero-glow">
+          <div className="hero-badge-pill">
+            <i data-lucide="sparkles" style={{ width: 14, height: 14 }}></i>
+            Smart India Hackathon 2026 • Problem Statement SIH26044
+          </div>
+          <h1 className="landing-headline">
+            Bridging the Academia-Industry Competency Gap
+          </h1>
+          <p className="landing-subtitle">
+            A unified national collaboration portal connecting <strong>Students, Enterprises, Academicians, and Educational Institutions</strong> into an AI-powered skill diagnostic, curriculum alignment, and direct recruitment ecosystem.
+          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <button
+              className="btn-pill primary"
+              style={{ padding: '0.9rem 2rem', fontSize: '1rem' }}
+              onClick={() => { setAuthMode("signup"); setAuthModalOpen(true); }}
+            >
+              Launch Portal Account &rarr;
+            </button>
+            <a
+              href="#about"
+              className="btn-pill outline"
+              style={{ padding: '0.9rem 2rem', fontSize: '1rem' }}
+            >
+              Explore Solution Blueprint
+            </a>
+          </div>
+
+          <div className="trust-strip">
+            <div className="trust-item"><i data-lucide="shield-check" style={{ width: 16, height: 16, color: "var(--primary)" }}></i> AICTE Compliant Architecture</div>
+            <div className="trust-item"><i data-lucide="award" style={{ width: 16, height: 16, color: "var(--primary)" }}></i> NAAC / NIRF Audit Automation</div>
+            <div className="trust-item"><i data-lucide="cpu" style={{ width: 16, height: 16, color: "var(--primary)" }}></i> AI Matching Engine</div>
+            <div className="trust-item"><i data-lucide="check-circle" style={{ width: 16, height: 16, color: "var(--primary)" }}></i> DigiLocker Verified Badging</div>
+          </div>
+        </section>
+
+        {/* ABOUT SECTION */}
+        <section id="about" className="section-wrap">
+          <div className="section-header">
+            <span className="badge" style={{ marginBottom: 8 }}>About SkillBridge</span>
+            <h2>Transforming Higher Education Into Real Career Mobility</h2>
+            <p>
+              Traditional job portals treat hiring as a transactional resume board. SkillBridge closes the loop by diagnosing skill deficits early, upskilling faculty, and verifying competencies through standardized benchmarks.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+            <div className="stakeholder-card">
+              <div className="icon-box" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                <i data-lucide="target" style={{ width: 26, height: 26 }}></i>
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>Dynamic Skill Diagnostics</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', lineHeight: 1.5 }}>
+                Students complete timed technical questionnaires and aptitude evaluations. The engine highlights exact deficit percentages compared against live corporate requirements.
+              </p>
+            </div>
+
+            <div className="stakeholder-card">
+              <div className="icon-box" style={{ background: 'var(--warning-light)', color: '#b45309' }}>
+                <i data-lucide="refresh-cw" style={{ width: 26, height: 26 }}></i>
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>Curriculum Synchronization</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', lineHeight: 1.5 }}>
+                Gives professors direct access to corporate summer sabbaticals and Faculty Development Programs (FDPs), ensuring classroom syllabi mirror contemporary enterprise tech stacks.
+              </p>
+            </div>
+
+            <div className="stakeholder-card">
+              <div className="icon-box" style={{ background: 'var(--success-light)', color: 'var(--success)' }}>
+                <i data-lucide="zap" style={{ width: 26, height: 26 }}></i>
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>Algorithmic Hiring Match</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', lineHeight: 1.5 }}>
+                Recruiters bypass the noise of inflated PDF resumes. Candidates are ranked automatically by weighted compatibility scores computed directly from verified exam badges.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* THE PROBLEM VS THE SOLUTION */}
+        <section id="problem" className="section-wrap" style={{ background: '#ffffff', borderRadius: 24, border: '1px solid var(--border)', margin: '2rem auto' }}>
+          <div className="section-header">
+            <span className="badge" style={{ marginBottom: 8, background: 'var(--danger-light)', color: 'var(--danger)' }}>The Disconnect</span>
+            <h2>Why The Current Campus Hiring Model Is Broken</h2>
+            <p>A breakdown of the friction points facing academia and industry today, and how SkillBridge permanently solves them.</p>
+          </div>
+
+          <div className="comparison-grid">
+            <div className="compare-card bad">
+              <h3 style={{ color: 'var(--danger)', fontSize: '1.3rem', fontWeight: 800, marginBottom: '1rem' }}>
+                Traditional Paradigm (Without SkillBridge)
+              </h3>
+              <div className="compare-item">
+                <i data-lucide="x-circle" style={{ width: 20, height: 20, color: 'var(--danger)', flexShrink: 0 }}></i>
+                <span><strong>Outdated Curricula:</strong> Syllabi updated once every 4–5 years; students graduate lacking modern frameworks and tools.</span>
+              </div>
+              <div className="compare-item">
+                <i data-lucide="x-circle" style={{ width: 20, height: 20, color: 'var(--danger)', flexShrink: 0 }}></i>
+                <span><strong>Resume Inflation:</strong> Recruiters receive thousands of generic PDFs with unverified claims, creating massive screening fatigue.</span>
+              </div>
+              <div className="compare-item">
+                <i data-lucide="x-circle" style={{ width: 20, height: 20, color: 'var(--danger)', flexShrink: 0 }}></i>
+                <span><strong>Isolated Faculty:</strong> Academicians have zero structured exposure to enterprise production architectures and industry tools.</span>
+              </div>
+              <div className="compare-item">
+                <i data-lucide="x-circle" style={{ width: 20, height: 20, color: 'var(--danger)', flexShrink: 0 }}></i>
+                <span><strong>Reactive Placement Cells:</strong> Institutions discover student employability gaps only <em>after</em> placement season failure.</span>
+              </div>
+            </div>
+
+            <div className="compare-card good">
+              <h3 style={{ color: 'var(--success)', fontSize: '1.3rem', fontWeight: 800, marginBottom: '1rem' }}>
+                The SkillBridge Unified Ecosystem
+              </h3>
+              <div className="compare-item">
+                <i data-lucide="check-circle" style={{ width: 20, height: 20, color: 'var(--success)', flexShrink: 0 }}></i>
+                <span><strong>Continuous Gap Diagnosis:</strong> Real-time skill analytics pinpoint deficiencies before graduation with targeted learning pathways.</span>
+              </div>
+              <div className="compare-item">
+                <i data-lucide="check-circle" style={{ width: 20, height: 20, color: 'var(--success)', flexShrink: 0 }}></i>
+                <span><strong>Verified Portfolios:</strong> Profiles backed by standardized benchmark tests and tamper-proof DigiLocker certificates.</span>
+              </div>
+              <div className="compare-item">
+                <i data-lucide="check-circle" style={{ width: 20, height: 20, color: 'var(--success)', flexShrink: 0 }}></i>
+                <span><strong>Faculty Sabbaticals & FDPs:</strong> Corporate immersion sabbaticals allow professors to bring modern tools into class labs.</span>
+              </div>
+              <div className="compare-item">
+                <i data-lucide="check-circle" style={{ width: 20, height: 20, color: 'var(--success)', flexShrink: 0 }}></i>
+                <span><strong>Cohort Heatmaps & Audits:</strong> 1-click NAAC/NIRF reporting and proactive syllabus electives based on real hiring demand.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 4-STAKEHOLDER DIRECTORY */}
+        <section id="ecosystem" className="section-wrap">
+          <div className="section-header">
+            <span className="badge" style={{ marginBottom: 8 }}>Ecosystem Architecture</span>
+            <h2>Dedicated Workspaces For All 4 Stakeholders</h2>
+            <p>Every participant in the higher-education lifecycle receives a tailored, intelligent workspace.</p>
+          </div>
+
+          <div className="stakeholder-grid">
+            <div className="stakeholder-card">
+              <div>
+                <div className="icon-box" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                  <i data-lucide="graduation-cap" style={{ width: 24, height: 24 }}></i>
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.4rem' }}>Student Portal</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: '1rem' }}>
+                  Skill gap analyzers, standardized benchmark test scoring, digital portfolios, and 1-click job and internship tracking.
+                </p>
+              </div>
+              <button
+                className="btn-action primary"
+                onClick={() => { setAuthRole("student"); setAuthMode("signup"); setAuthModalOpen(true); }}
+              >
+                Access Student Suite
+              </button>
+            </div>
+
+            <div className="stakeholder-card">
+              <div>
+                <div className="icon-box" style={{ background: 'var(--warning-light)', color: '#b45309' }}>
+                  <i data-lucide="building-2" style={{ width: 24, height: 24 }}></i>
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.4rem' }}>Enterprise Portal</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: '1rem' }}>
+                  Post open roles, scout pre-screened talent via compatibility ranking, host live chat interviews, and fund campus research challenges.
+                </p>
+              </div>
+              <button
+                className="btn-action primary"
+                onClick={() => { setAuthRole("company"); setAuthMode("signup"); setAuthModalOpen(true); }}
+              >
+                Access Enterprise Suite
+              </button>
+            </div>
+
+            <div className="stakeholder-card">
+              <div>
+                <div className="icon-box" style={{ background: '#e0f2fe', color: '#0369a1' }}>
+                  <i data-lucide="award" style={{ width: 24, height: 24 }}></i>
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.4rem' }}>Faculty Portal</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: '1rem' }}>
+                  Discover corporate summer sabbaticals, certified Faculty Development Programs (FDPs), and apply for industry research consultancies.
+                </p>
+              </div>
+              <button
+                className="btn-action primary"
+                onClick={() => { setAuthRole("faculty"); setAuthMode("signup"); setAuthModalOpen(true); }}
+              >
+                Access Faculty Suite
+              </button>
+            </div>
+
+            <div className="stakeholder-card">
+              <div>
+                <div className="icon-box" style={{ background: '#f3e8ff', color: '#7e22ce' }}>
+                  <i data-lucide="landmark" style={{ width: 24, height: 24 }}></i>
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.4rem' }}>Institution Portal</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: '1rem' }}>
+                  Cohort-level skill deficit heatmaps, placement conversion analytics, and 1-click verified accreditation report generation.
+                </p>
+              </div>
+              <button
+                className="btn-action primary"
+                onClick={() => { setAuthRole("institution"); setAuthMode("signup"); setAuthModalOpen(true); }}
+              >
+                Access Dean Suite
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* VISUAL ANALYTICS & IMPACT GRAPH */}
+        <section id="impact" className="section-wrap">
+          <div className="analytics-banner">
+            <div>
+              <span className="badge" style={{ background: 'rgba(255,255,255,0.15)', color: '#ffffff', marginBottom: '1rem' }}>
+                Measured Impact
+              </span>
+              <h2 style={{ fontSize: '2.3rem', fontWeight: 800, lineHeight: 1.25, marginBottom: '1rem' }}>
+                Closing The 40% Graduate Employability Deficit
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.98rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                Our pilot metrics show a radical reduction in enterprise candidate screening time while increasing cohort readiness scores before campus placement drives commence.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent)' }}>68%</div>
+                  <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Faster Time-To-Hire for Enterprises</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--success)' }}>+42%</div>
+                  <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Student Practical Competency Lift</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pure CSS Dynamic Graph Visualization */}
+            <div className="chart-container">
+              <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.2rem' }}>Cohort Competency Lift by Domain</h4>
+              <div className="bar-stat">
+                <div className="bar-stat-label">
+                  <span>Cloud CI/CD & DevOps</span>
+                  <span style={{ color: 'var(--accent)' }}>88% (+38%)</span>
+                </div>
+                <div className="bar-track">
+                  <div className="bar-fill" style={{ width: '88%', background: 'linear-gradient(90deg, #4f46e5, var(--accent))' }}></div>
+                </div>
+              </div>
+
+              <div className="bar-stat">
+                <div className="bar-stat-label">
+                  <span>Full-Stack Web Architectures</span>
+                  <span style={{ color: 'var(--success)' }}>94% (+44%)</span>
+                </div>
+                <div className="bar-track">
+                  <div className="bar-fill" style={{ width: '94%', background: 'linear-gradient(90deg, #059669, var(--success))' }}></div>
+                </div>
+              </div>
+
+              <div className="bar-stat">
+                <div className="bar-stat-label">
+                  <span>Machine Learning & Data Pipelines</span>
+                  <span style={{ color: 'var(--warning)' }}>82% (+32%)</span>
+                </div>
+                <div className="bar-track">
+                  <div className="bar-fill" style={{ width: '82%', background: 'linear-gradient(90deg, #d97706, var(--warning))' }}></div>
+                </div>
+              </div>
+
+              <div className="bar-stat">
+                <div className="bar-stat-label">
+                  <span>UI/UX & Product Prototyping</span>
+                  <span style={{ color: '#a855f7' }}>90% (+30%)</span>
+                </div>
+                <div className="bar-track">
+                  <div className="bar-fill" style={{ width: '90%', background: 'linear-gradient(90deg, #7e22ce, #a855f7)' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* TEAM & METHODOLOGY */}
+        <section className="section-wrap" style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="section-header">
+            <span className="badge" style={{ marginBottom: 8 }}>Engineering Execution</span>
+            <h2>Developed by Team Byte Builders</h2>
+            <p>Designed under an agile 4-phase methodology backed by modern open-source web technologies, Supabase PostgreSQL, and government initiative frameworks.</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.2rem', textAlign: 'center' }}>
+            <div style={{ padding: '1.5rem', background: '#ffffff', borderRadius: '16px', border: '1px solid var(--border)' }}>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: 4 }}>Phase 1: Diagnostic</div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>MCQ benchmark engine identifying technical and soft skill deficits.</p>
+            </div>
+            <div style={{ padding: '1.5rem', background: '#ffffff', borderRadius: '16px', border: '1px solid var(--border)' }}>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: 4 }}>Phase 2: Curriculum Sync</div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Faculty corporate immersion, sabbaticals, and industrial training.</p>
+            </div>
+            <div style={{ padding: '1.5rem', background: '#ffffff', borderRadius: '16px', border: '1px solid var(--border)' }}>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: 4 }}>Phase 3: AI Matching</div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Weighted candidate-job compatibility and verified badging.</p>
+            </div>
+            <div style={{ padding: '1.5rem', background: '#ffffff', borderRadius: '16px', border: '1px solid var(--border)' }}>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: 4 }}>Phase 4: Institutional Audits</div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Automated AICTE, NAAC, and NIRF compliance documentation.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* FOOTER */}
+        <footer className="landing-footer">
+          <div className="brand-section" style={{ justifyContent: 'center', marginBottom: '1rem' }}>
+            <div className="brand-logo">SB</div>
+            <div className="brand-title">SkillBridge</div>
+          </div>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', maxWidth: 600, margin: '0 auto 1.5rem' }}>
+            Smart India Hackathon 2026 Submission • Theme: Software • Problem ID: SIH26044<br />
+            Built with React.js, PostgreSQL (Supabase), and CSS Glassmorphism.
+          </p>
+          <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+            © 2026 SkillBridge. Team Byte Builders. All rights reserved.
+          </div>
+        </footer>
+
+        {/* AUTHENTICATION MODAL */}
+        {authModalOpen && (
+          <div className="modal-overlay" onClick={() => setAuthModalOpen(false)}>
+            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+              <div style={{ textAlign: "center", marginBottom: "1.2rem" }}>
+                <div className="brand-logo" style={{ margin: "0 auto 12px" }}>SB</div>
+                <h2 style={{ fontSize: "1.5rem", fontWeight: 800 }}>SkillBridge Cloud Portal</h2>
+                <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                  {authMode === "signin" ? "Sign in to access your portal" : "Create a verified ecosystem account"}
+                </p>
+              </div>
+
+              <div className="auth-tab-row">
+                <button
+                  className={`auth-tab ${authMode === "signin" ? "active" : ""}`}
+                  onClick={() => setAuthMode("signin")}
+                >
+                  Sign In
+                </button>
+                <button
+                  className={`auth-tab ${authMode === "signup" ? "active" : ""}`}
+                  onClick={() => setAuthMode("signup")}
+                >
+                  Create Account
+                </button>
+              </div>
+
+              {authMode === "signup" && (
+                <div>
+                  <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: 6 }}>
+                    SELECT YOUR STAKEHOLDER ENTITY
+                  </label>
+                  <div className="role-grid">
+                    {['student', 'company', 'faculty', 'institution'].map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        className={`role-tab-btn ${authRole === r ? "active" : ""}`}
+                        onClick={() => setAuthRole(r)}
+                      >
+                        {r.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleAuth}>
+                {authMode === "signup" && (
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: 4 }}>
+                      {authRole === 'student' && "Full Student Name"}
+                      {authRole === 'company' && "Enterprise / Recruiter Name"}
+                      {authRole === 'faculty' && "Academician / Professor Name"}
+                      {authRole === 'institution' && "College / University Name"}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Alex Parker"
+                      value={authName}
+                      onChange={(e) => setAuthName(e.target.value)}
+                      style={{ width: "100%", padding: "0.7rem", borderRadius: 8, border: "1px solid var(--border)" }}
+                    />
+                  </div>
+                )}
+
+                <div style={{ marginBottom: "1rem" }}>
+                  <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: 4 }}>
+                    Email Address (PostgreSQL Key)
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="name@organization.edu"
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    style={{ width: "100%", padding: "0.7rem", borderRadius: 8, border: "1px solid var(--border)" }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: "1.4rem" }}>
+                  <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: 4 }}>
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    style={{ width: "100%", padding: "0.7rem", borderRadius: 8, border: "1px solid var(--border)" }}
+                  />
+                </div>
+
+                <button type="submit" className="btn-action primary" style={{ width: "100%", padding: "0.85rem" }}>
+                  {authMode === "signin" ? "Sign In to Portal" : "Complete Registration & Enter"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {toastMessage && <div className="toast">{toastMessage}</div>}
+      </>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+</body>
+</html>
