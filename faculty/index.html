@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillBridge - Academician & Faculty Portal</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Shared Global CSS -->
+  <link rel="stylesheet" href="../css/styles.css" />
+
+  <!-- React & Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Supabase JS Client CDN -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <!-- Shared Supabase Client & Auth Helper -->
+  <script src="../js/supabase-client.js"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    .program-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .program-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+    }
+    .badge-fdp {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge-sabbatical {
+      background: #fef3c7;
+      color: #b45309;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge-consultancy {
+      background: #ecfdf5;
+      color: #059669;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const { useState, useEffect } = React;
+
+  function FacultyPortal() {
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState("dashboard"); // dashboard | sabbaticals | fdp | consultancy | my-programs
+    const [toastMessage, setToastMessage] = useState("");
+
+    // Live Data Collections
+    const [programs, setPrograms] = useState([]);
+    const [registeredPrograms, setRegisteredPrograms] = useState([]);
+
+    // Consultancy Grant Submission Form
+    const [proposalForm, setProposalForm] = useState({
+      title: "",
+      domain: "Artificial Intelligence & Edge Computing",
+      budget: "$15,000",
+      description: ""
+    });
+
+    const showToast = (msg) => {
+      setToastMessage(msg);
+      setTimeout(() => setToastMessage(""), 3200);
+    };
+
+    // Load Faculty Profile & Programs
+    useEffect(() => {
+      async function initializeSession() {
+        const client = window.sb || (window.supabase && typeof window.supabase.from === 'function' ? window.supabase : null);
+        if (!client) {
+          window.location.href = "../index.html";
+          return;
+        }
+
+        const { data: { session } } = await client.auth.getSession();
+        if (!session || !session.user) {
+          window.location.href = "../index.html";
+          return;
+        }
+
+        // Fetch profile
+        const { data: profile } = await client
+          .from('profiles')
+          .select('*')
+          .eq('email', session.user.email)
+          .maybeSingle();
+
+        if (profile && profile.role !== 'faculty') {
+          routeUserToPortal(profile.role);
+          return;
+        }
+
+        setUser(profile || session.user);
+
+        // Fetch corporate programs from PostgreSQL
+        const { data: progList } = await client
+          .from('faculty_programs')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (progList && progList.length > 0) {
+          setPrograms(progList);
+        } else {
+          // Starter fallback programs if table is empty
+          setPrograms([
+            {
+              id: "1",
+              company: "Google Cloud",
+              title: "Distributed Systems & Cloud-Native Curriculum Immersion",
+              type: "Faculty Sabbatical",
+              duration: "6 Weeks (Summer)",
+              stipend: "$4,500 Sponsored",
+              mode: "Hybrid"
+            },
+            {
+              id: "2",
+              company: "Microsoft Research",
+              title: "Generative AI Integration into University Syllabi",
+              type: "Faculty Development Program (FDP)",
+              duration: "2 Weeks",
+              stipend: "AICTE Certified",
+              mode: "Online"
+            },
+            {
+              id: "3",
+              company: "NVIDIA Academic Program",
+              title: "Accelerated Computing & CUDA Lab Modernization",
+              type: "Corporate Consultancy",
+              duration: "3 Months",
+              stipend: "$18,000 Grant",
+              mode: "Hybrid"
+            }
+          ]);
+        }
+
+        setLoading(false);
+      }
+
+      initializeSession();
+    }, []);
+
+    useEffect(() => {
+      if (window.lucide) window.lucide.createIcons();
+    }, [loading, activeTab, programs, registeredPrograms]);
+
+    // Handle Program Registration
+    const handleRegisterProgram = (prog) => {
+      if (!registeredPrograms.some(p => p.id === prog.id)) {
+        setRegisteredPrograms([...registeredPrograms, prog]);
+        showToast(`Registration confirmed for ${prog.title}!`);
+      }
+    };
+
+    // Handle Grant Proposal Submission
+    const handleProposalSubmit = (e) => {
+      e.preventDefault();
+      if (!proposalForm.title || !proposalForm.description) return;
+
+      showToast(`Grant proposal "${proposalForm.title}" submitted to enterprise review committee!`);
+      setProposalForm({
+        title: "",
+        domain: "Artificial Intelligence & Edge Computing",
+        budget: "$15,000",
+        description: ""
+      });
+      setActiveTab("dashboard");
+    };
+
+    if (loading) {
+      return (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+          <p style={{ fontWeight: 700, color: "var(--text-muted)" }}>Loading Faculty Workspace...</p>
+        </div>
+      );
+    }
+
+    const sabbaticals = programs.filter(p => p.type.toLowerCase().includes("sabbatical"));
+    const fdps = programs.filter(p => p.type.toLowerCase().includes("fdp") || p.type.toLowerCase().includes("development"));
+    const consultancies = programs.filter(p => p.type.toLowerCase().includes("consultancy") || p.type.toLowerCase().includes("grant"));
+
+    return (
+      <>
+        {/* Navigation Bar */}
+        <header className="header">
+          <div className="nav-container">
+            <div className="brand-section" onClick={() => setActiveTab("dashboard")}>
+              <div className="brand-logo">SB</div>
+              <div className="brand-title">SkillBridge</div>
+            </div>
+
+            <div className="nav-pill">
+              {[
+                { id: "dashboard", label: "Overview" },
+                { id: "sabbaticals", label: "Sabbaticals" },
+                { id: "fdp", label: "FDP Modules" },
+                { id: "consultancy", label: "Research Grants" },
+                { id: "my-programs", label: `My Enrolled (${registeredPrograms.length})` }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  className={`nav-item ${activeTab === tab.id ? "active" : ""}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="user-pill">
+              <span className="role-badge role-faculty">Faculty</span>
+              <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>{user.name || user.email}</span>
+              <button className="logout-btn" onClick={handleLogout} title="Sign Out">
+                <i data-lucide="log-out" style={{ width: 14, height: 14 }}></i>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div className="app-layout">
+          {/* Sidebar */}
+          <aside className="sidebar">
+            <div className="sidebar-heading">Academician Suite</div>
+
+            <button className={`sidebar-btn ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
+              <i data-lucide="home" style={{ width: 18, height: 18 }}></i>
+              <span>Dashboard</span>
+            </button>
+            <button className={`sidebar-btn ${activeTab === "sabbaticals" ? "active" : ""}`} onClick={() => setActiveTab("sabbaticals")}>
+              <i data-lucide="briefcase" style={{ width: 18, height: 18 }}></i>
+              <span>Corporate Sabbaticals</span>
+            </button>
+            <button className={`sidebar-btn ${activeTab === "fdp" ? "active" : ""}`} onClick={() => setActiveTab("fdp")}>
+              <i data-lucide="award" style={{ width: 18, height: 18 }}></i>
+              <span>FDP Upskilling</span>
+            </button>
+            <button className={`sidebar-btn ${activeTab === "consultancy" ? "active" : ""}`} onClick={() => setActiveTab("consultancy")}>
+              <i data-lucide="file-text" style={{ width: 18, height: 18 }}></i>
+              <span>Industry Consultancy</span>
+            </button>
+            <button className={`sidebar-btn ${activeTab === "my-programs" ? "active" : ""}`} onClick={() => setActiveTab("my-programs")}>
+              <i data-lucide="check-circle" style={{ width: 18, height: 18 }}></i>
+              <span>Enrolled Programs</span>
+            </button>
+          </aside>
+
+          {/* Dynamic Content */}
+          <main className="content-area">
+
+            {/* VIEW 1: DASHBOARD OVERVIEW */}
+            {activeTab === "dashboard" && (
+              <div className="dashboard-body">
+                <section className="hero-card faculty">
+                  <div className="hero-content">
+                    <h2>Welcome, {user.name}</h2>
+                    <p>
+                      <strong>{user.designation || "Faculty Member"}</strong> • Department of <strong>{user.department || "Engineering"}</strong> at <strong>{user.institution_name || "University"}</strong>.
+                      Align classroom curriculum with contemporary industry production tools through corporate sabbaticals and sponsored research.
+                    </p>
+                    <button className="hero-btn" onClick={() => setActiveTab("sabbaticals")}>
+                      Explore Corporate Sabbaticals &rarr;
+                    </button>
+                  </div>
+                  <div className="hero-graphic">
+                    <i data-lucide="award" style={{ width: 44, height: 44 }}></i>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>NAAC Criteria 3.5 Sync</span>
+                  </div>
+                </section>
+
+                <div className="side-stack">
+                  <div className="side-card" onClick={() => setActiveTab("my-programs")}>
+                    <div className="side-card-icon" style={{ background: "#e0f2fe", color: "#0369a1" }}>
+                      <i data-lucide="award" style={{ width: 22, height: 22 }}></i>
+                    </div>
+                    <div>
+                      <h4>{registeredPrograms.length} Active Enrollments</h4>
+                      <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>FDPs & Industrial Immersion</p>
+                    </div>
+                  </div>
+
+                  <div className="side-card" onClick={() => setActiveTab("consultancy")}>
+                    <div className="side-card-icon" style={{ background: "var(--success-light)", color: "var(--success)" }}>
+                      <i data-lucide="dollar-sign" style={{ width: 22, height: 22 }}></i>
+                    </div>
+                    <div>
+                      <h4>Industry R&D Grants</h4>
+                      <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Funded consultancy challenges</p>
+                    </div>
+                  </div>
+                </div>
+
+                <section className="recommended-container">
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: 800 }}>Faculty Workflow</h3>
+                  <div className="cards-grid">
+                    {[
+                      { title: "Summer Sabbatical", icon: "briefcase", action: () => setActiveTab("sabbaticals") },
+                      { title: "AICTE / FDP", icon: "award", action: () => setActiveTab("fdp") },
+                      { title: "Propose Grant", icon: "file-plus", action: () => setActiveTab("consultancy") },
+                      { title: "My Credits", icon: "check-circle", action: () => setActiveTab("my-programs") }
+                    ].map((item, idx) => (
+                      <button key={idx} className="rec-card" onClick={item.action}>
+                        <div style={{ background: "var(--primary-light)", color: "var(--primary)", padding: 10, borderRadius: 10 }}>
+                          <i data-lucide={item.icon} style={{ width: 22, height: 22 }}></i>
+                        </div>
+                        <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>{item.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {/* VIEW 2: CORPORATE SABBATICALS */}
+            {activeTab === "sabbaticals" && (
+              <div>
+                <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.4rem" }}>
+                  Corporate Summer Sabbaticals & Industrial Immersion
+                </h2>
+                <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+                  Spend 4–8 weeks embedded inside corporate engineering teams to modernize university laboratory syllabi[cite: 1].
+                </p>
+
+                <div className="card-list">
+                  {sabbaticals.map(p => {
+                    const isEnrolled = registeredPrograms.some(r => r.id === p.id);
+                    return (
+                      <div key={p.id} className="program-card">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <div>
+                            <h4 style={{ fontWeight: 800, fontSize: "1.15rem" }}>{p.title}</h4>
+                            <p style={{ color: "var(--primary)", fontWeight: 700, fontSize: "0.88rem" }}>{p.company}</p>
+                          </div>
+                          <span className="badge-sabbatical">Sabbatical</span>
+                        </div>
+
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                          <span><strong>Duration:</strong> {p.duration}</span>
+                          <span>•</span>
+                          <span><strong>Mode:</strong> {p.mode}</span>
+                          <span>•</span>
+                          <span><strong>Funding:</strong> {p.stipend}</span>
+                        </div>
+
+                        <button
+                          className={`btn-action ${isEnrolled ? "applied" : "primary"}`}
+                          onClick={() => !isEnrolled && handleRegisterProgram(p)}
+                        >
+                          {isEnrolled ? "✓ Enrolled" : "Apply for Corporate Sabbatical"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 3: FACULTY DEVELOPMENT PROGRAMS (FDP) */}
+            {activeTab === "fdp" && (
+              <div>
+                <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.4rem" }}>
+                  Certified Faculty Development Programs (FDPs)
+                </h2>
+                <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+                  AICTE / Industry recognized modules designed to bridge emerging tech gaps (GenAI, Cloud Infrastructure, Robotics)[cite: 1].
+                </p>
+
+                <div className="card-list">
+                  {fdps.map(p => {
+                    const isEnrolled = registeredPrograms.some(r => r.id === p.id);
+                    return (
+                      <div key={p.id} className="program-card">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <div>
+                            <h4 style={{ fontWeight: 800, fontSize: "1.15rem" }}>{p.title}</h4>
+                            <p style={{ color: "#0369a1", fontWeight: 700, fontSize: "0.88rem" }}>{p.company}</p>
+                          </div>
+                          <span className="badge-fdp">FDP Module</span>
+                        </div>
+
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                          <span><strong>Schedule:</strong> {p.duration}</span>
+                          <span>•</span>
+                          <span><strong>Format:</strong> {p.mode}</span>
+                          <span>•</span>
+                          <span><strong>Accreditation:</strong> {p.stipend}</span>
+                        </div>
+
+                        <button
+                          className={`btn-action ${isEnrolled ? "applied" : "primary"}`}
+                          onClick={() => !isEnrolled && handleRegisterProgram(p)}
+                        >
+                          {isEnrolled ? "✓ Enrolled" : "Register for Certified FDP"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 4: CONSULTANCY & RESEARCH GRANTS */}
+            {activeTab === "consultancy" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "1.5rem" }}>
+                <div>
+                  <h2 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.4rem" }}>Industry-Sponsored R&D Grants</h2>
+                  <p style={{ color: "var(--text-muted)", fontSize: "0.88rem", marginBottom: "1.2rem" }}>
+                    Corporate challenge statements seeking academic research partnerships and advisory[cite: 1].
+                  </p>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    {consultancies.map(p => (
+                      <div key={p.id} className="program-card">
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <h4 style={{ fontWeight: 800 }}>{p.title}</h4>
+                          <span className="badge-consultancy">R&D Grant</span>
+                        </div>
+                        <p style={{ color: "var(--primary)", fontWeight: 700, fontSize: "0.85rem" }}>{p.company}</p>
+                        <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>Funding: <strong>{p.stipend}</strong> • Term: {p.duration}</p>
+                        <button className="btn-action primary" onClick={() => showToast(`Consultancy expression of interest filed with ${p.company}!`)}>
+                          Submit Research Expression of Interest
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Submit New Proposal Form */}
+                <div style={{ background: "#ffffff", padding: "1.75rem", borderRadius: 20, border: "1px solid var(--border)", boxShadow: "var(--card-shadow)", height: "fit-content" }}>
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 800, marginBottom: "0.4rem" }}>Propose Industry Challenge</h3>
+                  <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "1.2rem" }}>
+                    Pitch a lab capability or university research project to corporate partners[cite: 1].
+                  </p>
+
+                  <form onSubmit={handleProposalSubmit}>
+                    <div style={{ marginBottom: "1rem" }}>
+                      <label className="field-label">Research Project Title</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Low-Latency Edge Inference Architecture"
+                        className="input-field"
+                        value={proposalForm.title}
+                        onChange={(e) => setProposalForm({ ...proposalForm, title: e.target.value })}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: "1rem" }}>
+                      <label className="field-label">Technical Domain</label>
+                      <select
+                        className="input-field"
+                        value={proposalForm.domain}
+                        onChange={(e) => setProposalForm({ ...proposalForm, domain: e.target.value })}
+                      >
+                        <option>Artificial Intelligence & Edge Computing</option>
+                        <option>Quantum & High Performance Computing</option>
+                        <option>Clean Energy & EV Microgrids</option>
+                        <option>Embedded Robotics & IoT</option>
+                      </select>
+                    </div>
+
+                    <div style={{ marginBottom: "1rem" }}>
+                      <label className="field-label">Requested Grant / Equipment Budget</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={proposalForm.budget}
+                        onChange={(e) => setProposalForm({ ...proposalForm, budget: e.target.value })}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: "1.2rem" }}>
+                      <label className="field-label">Abstract & Industry Deliverables</label>
+                      <textarea
+                        required
+                        rows="3"
+                        className="input-field"
+                        placeholder="Briefly describe the research methodology, student involvement, and expected output..."
+                        value={proposalForm.description}
+                        onChange={(e) => setProposalForm({ ...proposalForm, description: e.target.value })}
+                      ></textarea>
+                    </div>
+
+                    <button type="submit" className="btn-action primary" style={{ width: "100%", padding: "0.8rem" }}>
+                      Publish Proposal to Industry Board
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 5: MY ENROLLED PROGRAMS */}
+            {activeTab === "my-programs" && (
+              <div>
+                <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.4rem" }}>
+                  My Enrolled Programs & Academic Credits
+                </h2>
+                <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+                  Documented participation ready for automated export into institutional NAAC and NBA accreditation audits[cite: 1].
+                </p>
+
+                {registeredPrograms.length === 0 ? (
+                  <div style={{ background: "#ffffff", padding: "2.5rem", borderRadius: 16, border: "1px solid var(--border)", textAlign: "center" }}>
+                    <p style={{ color: "var(--text-muted)", marginBottom: "1rem" }}>You have not enrolled in any corporate sabbaticals or FDP modules yet.</p>
+                    <button className="btn-action primary" style={{ display: "inline-flex", width: "auto" }} onClick={() => setActiveTab("sabbaticals")}>
+                      Browse Corporate Sabbaticals
+                    </button>
+                  </div>
+                ) : (
+                  <div className="card-list">
+                    {registeredPrograms.map(p => (
+                      <div key={p.id} className="program-card">
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <h4 style={{ fontWeight: 800 }}>{p.title}</h4>
+                          <span className="badge">{p.type}</span>
+                        </div>
+                        <p style={{ color: "var(--primary)", fontWeight: 700, fontSize: "0.85rem" }}>{p.company}</p>
+                        <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>Duration: {p.duration} • Status: <strong>Enrolled & Active</strong></p>
+                        <button className="btn-action" onClick={() => showToast("Exporting verifiable digital certificate...")}>
+                          Download AICTE Completion Credential
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+          </main>
+        </div>
+
+        {toastMessage && <div className="toast">{toastMessage}</div>}
+      </>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<FacultyPortal />);
+</script>
+
+</body>
+</html>

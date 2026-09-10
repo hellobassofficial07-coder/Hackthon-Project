@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillBridge - AI-Powered Academia-Industry Collaboration Portal</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- React & Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Supabase JS Client CDN -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <!-- Shared Supabase Client -->
+  <script src="js/supabase-client.js"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Landing & Hero Styles */
+    .hero-glow {
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 20%, rgba(79, 70, 229, 0.12) 0%, rgba(248, 250, 252, 0) 70%);
+      padding: 5rem 1.5rem 4rem;
+      text-align: center;
+    }
+
+    .hero-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      box-shadow: var(--card-shadow);
+      margin-bottom: 1.5rem;
+    }
+
+    .landing-headline {
+      font-size: 3.4rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      max-width: 950px;
+      margin: 0 auto 1.25rem;
+      background: linear-gradient(135deg, #0f172a 30%, #4338ca 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .landing-subtitle {
+      font-size: 1.18rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 780px;
+      margin: 0 auto 2.2rem;
+    }
+
+    .trust-strip {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-top: 2.5rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(226, 232, 240, 0.7);
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .section-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 4.5rem 1.5rem;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 3rem;
+    }
+
+    .section-header h2 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    /* Modal Form Enhancements */
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-field:focus {
+      border-color: var(--primary);
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--text-main);
+    }
+
+    .form-group-custom {
+      margin-bottom: 0.85rem;
+    }
+
+    .role-notice {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Analytics Banner */
+    .analytics-banner {
+      background: #0f172a;
+      color: #ffffff;
+      border-radius: 24px;
+      padding: 3rem 2.5rem;
+      box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.3);
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    .chart-container {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 1.75rem;
+    }
+
+    .bar-stat { margin-bottom: 1.1rem; }
+    .bar-stat-label { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; }
+    .bar-track { height: 10px; background: rgba(255, 255, 255, 0.12); border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 999px; }
+
+    .stakeholder-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .stakeholder-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.8rem;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.25s ease;
+    }
+
+    .stakeholder-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--card-shadow-hover);
+      border-color: var(--primary);
+    }
+
+    .icon-box {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .landing-footer {
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      padding: 3rem 1.5rem 2rem;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .landing-headline { font-size: 2.3rem; }
+      .analytics-banner { grid-template-columns: 1fr; }
+      .form-grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const { useState, useEffect } = React;
+  const supabase = window.sb || (window.supabase && window.supabase.createClient ? window.supabase.createClient("https://bqyzpmzzdqaiixpesgsq.supabase.co", "sb_publishable_1jzWfwvAcgy4m0Bu3gsr4Q_zlIbGR53") : null);
+
+  function App() {
+    const [authModalOpen, setAuthModalOpen] = useState(false);
+    const [authMode, setAuthMode] = useState("signin"); // "signin" or "signup"
+    const [authRole, setAuthRole] = useState("student"); // student | company | faculty | institution
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [toastMessage, setToastMessage] = useState("");
+    const [activeUser, setActiveUser] = useState(null);
+
+    // Dynamic Form Data State
+    const [formData, setFormData] = useState({
+      // Credentials
+      email: "",
+      password: "",
+      phone: "",
+      // Shared / Entity Name
+      name: "",
+      // Student Specific
+      degree: "B.Tech Computer Science",
+      graduation_year: 2027,
+      institution_name: "",
+      domain: "Engineering & IT",
+      // Enterprise Specific
+      company_size: "50-250 Employees",
+      website: "",
+      requirements: "",
+      // Faculty Specific
+      designation: "Assistant Professor",
+      department: "Computer Engineering",
+      // Institution Specific
+      aishe_code: "",
+      institution_type: "Engineering College / University"
+    });
+
+    const showToast = (msg) => {
+      setToastMessage(msg);
+      setTimeout(() => setToastMessage(""), 3500);
+    };
+
+    const handleInputChange = (field, value) => {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    useEffect(() => {
+      async function checkSession() {
+        if (typeof getCurrentUser === "function") {
+          const user = await getCurrentUser();
+          if (user) setActiveUser(user);
+        }
+      }
+      checkSession();
+      if (window.lucide) window.lucide.createIcons();
+    }, [authModalOpen, authMode, authRole]);
+
+    const handleAuth = async (e) => {
+      e.preventDefault();
+      setIsSubmitting(true);
+
+      const client = window.sb || (window.supabase && typeof window.supabase.from === 'function' ? window.supabase : null);
+      if (!client) {
+        showToast("Database client not initialized. Check credentials.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const emailTrimmed = formData.email.trim().toLowerCase();
+
+      try {
+        if (authMode === "signup") {
+          // Send all fields inside metadata. The PostgreSQL trigger creates the profile row!
+          const { data, error } = await client.auth.signUp({
+            email: emailTrimmed,
+            password: formData.password,
+            options: {
+              data: {
+                name: formData.name,
+                role: authRole,
+                phone: formData.phone || null,
+                domain: formData.domain || "Engineering & IT",
+                degree: formData.degree || null,
+                institution_name: formData.institution_name || null,
+                graduation_year: parseInt(formData.graduation_year) || 2027,
+                company_size: formData.company_size || null,
+                website: formData.website || null,
+                requirements: formData.requirements || null,
+                designation: formData.designation || null,
+                department: formData.department || null,
+                aishe_code: formData.aishe_code || null,
+                institution_type: formData.institution_type || null
+              }
+            }
+          });
+
+          if (error) {
+            showToast("Registration Error: " + error.message);
+            return;
+          }
+
+          showToast("Account created successfully! Launching workspace...");
+          setTimeout(() => {
+            routeUserToPortal(authRole);
+          }, 1200);
+
+        } else {
+          // Sign In Flow
+          const { data, error } = await client.auth.signInWithPassword({
+            email: emailTrimmed,
+            password: formData.password
+          });
+
+          if (error) {
+            showToast("Sign In Failed: " + error.message);
+            return;
+          }
+
+          // Check role from profiles table
+          const { data: profile } = await client
+            .from('profiles')
+            .select('*')
+            .eq('email', emailTrimmed)
+            .maybeSingle();
+
+          const targetRole = profile ? profile.role : (data.user?.user_metadata?.role || "student");
+          showToast(`Welcome back! Loading ${targetRole.toUpperCase()} portal...`);
+          setTimeout(() => {
+            routeUserToPortal(targetRole);
+          }, 1000);
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("Error: " + (err.message || "Failed to authenticate"));
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    return (
+      <>
+        {/* Navigation Bar */}
+        <header className="header">
+          <div className="nav-container">
+            <a href="#home" className="brand-section">
+              <div className="brand-logo">SB</div>
+              <div className="brand-title">SkillBridge</div>
+            </a>
+
+            <div className="nav-pill">
+              <a href="#about" className="nav-item">About System</a>
+              <a href="#ecosystem" className="nav-item">Portals</a>
+              <a href="#impact" className="nav-item">Impact Metrics</a>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {activeUser ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    className="btn-pill primary"
+                    onClick={() => routeUserToPortal(activeUser.role || "student")}
+                  >
+                    Open {activeUser.role ? activeUser.role.toUpperCase() : "MY"} Portal &rarr;
+                  </button>
+                  <button className="btn-pill outline" onClick={handleLogout}>Sign Out</button>
+                </div>
+              ) : (
+                <>
+                  <button className="btn-pill outline" onClick={() => { setAuthMode("signin"); setAuthModalOpen(true); }}>
+                    Sign In
+                  </button>
+                  <button className="btn-pill primary" onClick={() => { setAuthMode("signup"); setAuthModalOpen(true); }}>
+                    Get Started
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* HERO BANNER */}
+        <section id="home" className="hero-glow">
+          <div className="hero-badge-pill">
+            <i data-lucide="sparkles" style={{ width: 14, height: 14 }}></i>
+            Smart India Hackathon 2026 • Problem Statement SIH26044
+          </div>
+          <h1 className="landing-headline">
+            Bridging the Academia-Industry Competency Gap
+          </h1>
+          <p className="landing-subtitle">
+            A unified national collaboration portal connecting <strong>Students, Enterprises, Academicians, and Educational Institutions</strong> into an AI-driven skill diagnostic, curriculum alignment, and direct recruitment ecosystem.
+          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <button
+              className="btn-pill primary"
+              style={{ padding: '0.9rem 2rem', fontSize: '1rem' }}
+              onClick={() => { setAuthMode("signup"); setAuthModalOpen(true); }}
+            >
+              Create Portal Account &rarr;
+            </button>
+            <button
+              className="btn-pill outline"
+              style={{ padding: '0.9rem 2rem', fontSize: '1rem' }}
+              onClick={() => { setAuthMode("signin"); setAuthModalOpen(true); }}
+            >
+              Sign In to Existing Portal
+            </button>
+          </div>
+
+          <div className="trust-strip">
+            <div className="trust-item"><i data-lucide="shield-check" style={{ width: 16, height: 16, color: "var(--primary)" }}></i> AICTE Compliant Architecture</div>
+            <div className="trust-item"><i data-lucide="award" style={{ width: 16, height: 16, color: "var(--primary)" }}></i> NAAC / NIRF Audit Automation</div>
+            <div className="trust-item"><i data-lucide="cpu" style={{ width: 16, height: 16, color: "var(--primary)" }}></i> AI Compatibility Match</div>
+            <div className="trust-item"><i data-lucide="check-circle" style={{ width: 16, height: 16, color: "var(--primary)" }}></i> DigiLocker Verified Badges</div>
+          </div>
+        </section>
+
+        {/* 4 STAKEHOLDER PORTAL CARDS */}
+        <section id="ecosystem" className="section-wrap">
+          <div className="section-header">
+            <span className="badge" style={{ marginBottom: 8 }}>Ecosystem Architecture</span>
+            <h2>Dedicated Portals For All 4 Stakeholders</h2>
+            <p>Select your persona to create a verified profile with customized credentials.</p>
+          </div>
+
+          <div className="stakeholder-grid">
+            <div className="stakeholder-card">
+              <div>
+                <div className="icon-box" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                  <i data-lucide="graduation-cap" style={{ width: 24, height: 24 }}></i>
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.4rem' }}>Student Portal</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: '1.2rem' }}>
+                  Complete timed assessments, visualize curriculum skill gaps, build verified digital portfolios, and apply to vetted internships.
+                </p>
+              </div>
+              <button
+                className="btn-action primary"
+                onClick={() => { setAuthRole("student"); setAuthMode("signup"); setAuthModalOpen(true); }}
+              >
+                Register as Student
+              </button>
+            </div>
+
+            <div className="stakeholder-card">
+              <div>
+                <div className="icon-box" style={{ background: 'var(--warning-light)', color: '#b45309' }}>
+                  <i data-lucide="building-2" style={{ width: 24, height: 24 }}></i>
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.4rem' }}>Enterprise Portal</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: '1.2rem' }}>
+                  Publish placement opportunities, scout talent pre-ranked by compatibility scores, and schedule interviews via direct chat.
+                </p>
+              </div>
+              <button
+                className="btn-action primary"
+                onClick={() => { setAuthRole("company"); setAuthMode("signup"); setAuthModalOpen(true); }}
+              >
+                Register as Enterprise
+              </button>
+            </div>
+
+            <div className="stakeholder-card">
+              <div>
+                <div className="icon-box" style={{ background: '#e0f2fe', color: '#0369a1' }}>
+                  <i data-lucide="award" style={{ width: 24, height: 24 }}></i>
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.4rem' }}>Faculty Portal</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: '1.2rem' }}>
+                  Access certified Faculty Development Programs (FDPs), apply for summer industrial sabbaticals, and engage in corporate consultancies.
+                </p>
+              </div>
+              <button
+                className="btn-action primary"
+                onClick={() => { setAuthRole("faculty"); setAuthMode("signup"); setAuthModalOpen(true); }}
+              >
+                Register as Faculty
+              </button>
+            </div>
+
+            <div className="stakeholder-card">
+              <div>
+                <div className="icon-box" style={{ background: '#f3e8ff', color: '#7e22ce' }}>
+                  <i data-lucide="landmark" style={{ width: 24, height: 24 }}></i>
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.4rem' }}>Institution Portal</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: '1.2rem' }}>
+                  Monitor cohort-level skill deficit heatmaps, audit placement readiness metrics, and generate 1-click NAAC/NIRF reports.
+                </p>
+              </div>
+              <button
+                className="btn-action primary"
+                onClick={() => { setAuthRole("institution"); setAuthMode("signup"); setAuthModalOpen(true); }}
+              >
+                Register as Dean / TPO
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* METRICS & GRAPH */}
+        <section id="impact" className="section-wrap">
+          <div className="analytics-banner">
+            <div>
+              <span className="badge" style={{ background: 'rgba(255,255,255,0.15)', color: '#ffffff', marginBottom: '1rem' }}>
+                Measurable Impact
+              </span>
+              <h2 style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1.25, marginBottom: '1rem' }}>
+                Eliminating Graduate Employability Deficits
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                SkillBridge cuts recruiter candidate screening time by over 65% while providing colleges with verified student training data.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent)' }}>68%</div>
+                  <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Faster Recruiter Screening Time</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--success)' }}>+42%</div>
+                  <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Cohort Technical Competency Lift</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="chart-container">
+              <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.2rem' }}>Cohort Competency Lift by Domain</h4>
+              <div className="bar-stat">
+                <div className="bar-stat-label">
+                  <span>Cloud Architecture & DevOps</span>
+                  <span style={{ color: 'var(--accent)' }}>88% (+38%)</span>
+                </div>
+                <div className="bar-track">
+                  <div className="bar-fill" style={{ width: '88%', background: 'linear-gradient(90deg, #4f46e5, var(--accent))' }}></div>
+                </div>
+              </div>
+
+              <div className="bar-stat">
+                <div className="bar-stat-label">
+                  <span>Full-Stack Web Engineering</span>
+                  <span style={{ color: 'var(--success)' }}>94% (+44%)</span>
+                </div>
+                <div className="bar-track">
+                  <div className="bar-fill" style={{ width: '94%', background: 'linear-gradient(90deg, #059669, var(--success))' }}></div>
+                </div>
+              </div>
+
+              <div className="bar-stat">
+                <div className="bar-stat-label">
+                  <span>Data Science & AI Pipelines</span>
+                  <span style={{ color: 'var(--warning)' }}>82% (+32%)</span>
+                </div>
+                <div className="bar-track">
+                  <div className="bar-fill" style={{ width: '82%', background: 'linear-gradient(90deg, #d97706, var(--warning))' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FOOTER */}
+        <footer className="landing-footer">
+          <div className="brand-section" style={{ justifyContent: 'center', marginBottom: '1rem' }}>
+            <div className="brand-logo">SB</div>
+            <div className="brand-title">SkillBridge</div>
+          </div>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            Smart India Hackathon 2026 • Problem Statement SIH26044 • Team Byte Builders[cite: 1]
+          </p>
+        </footer>
+
+        {/* DYNAMIC AUTHENTICATION MODAL */}
+        {authModalOpen && (
+          <div className="modal-overlay" onClick={() => setAuthModalOpen(false)}>
+            <div className="modal-box" style={{ maxWidth: 580 }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ textAlign: "center", marginBottom: "1.2rem" }}>
+                <div className="brand-logo" style={{ margin: "0 auto 12px" }}>SB</div>
+                <h2 style={{ fontSize: "1.5rem", fontWeight: 800 }}>SkillBridge Cloud Portal</h2>
+                <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                  {authMode === "signin" ? "Sign in to access your registered workspace" : "Register a role-verified ecosystem account"}
+                </p>
+              </div>
+
+              {/* Mode Toggle */}
+              <div className="auth-tab-row">
+                <button
+                  type="button"
+                  className={`auth-tab ${authMode === "signin" ? "active" : ""}`}
+                  onClick={() => setAuthMode("signin")}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  className={`auth-tab ${authMode === "signup" ? "active" : ""}`}
+                  onClick={() => setAuthMode("signup")}
+                >
+                  Create Account
+                </button>
+              </div>
+
+              {/* Role Toggle (Only shown during Sign Up) */}
+              {authMode === "signup" && (
+                <div style={{ marginBottom: "1rem" }}>
+                  <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 4 }}>
+                    Account Type
+                  </label>
+                  <div className="role-grid">
+                    {['student', 'company', 'faculty', 'institution'].map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        className={`role-tab-btn ${authRole === r ? "active" : ""}`}
+                        onClick={() => setAuthRole(r)}
+                      >
+                        {r.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="role-notice">
+                    <i data-lucide="info" style={{ width: 14, height: 14 }}></i>
+                    <span>
+                      {authRole === 'student' && "Configuring Student Portfolio & Skill Diagnostic profile"}
+                      {authRole === 'company' && "Configuring Corporate Talent Acquisition & Recruitment profile"}
+                      {authRole === 'faculty' && "Configuring Academician Immersion & FDP profile"}
+                      {authRole === 'institution' && "Configuring University / TPO Accreditation profile"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleAuth}>
+                {authMode === "signup" && (
+                  <>
+                    <div className="form-group-custom">
+                      <label className="field-label">
+                        {authRole === 'student' && "Full Legal Name"}
+                        {authRole === 'company' && "Enterprise / Company Legal Name"}
+                        {authRole === 'faculty' && "Academician Full Name (with Title)"}
+                        {authRole === 'institution' && "College / University Official Name"}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        className="input-field"
+                        placeholder={authRole === 'student' ? "e.g. Alex Parker" : authRole === 'company' ? "e.g. CyberNexus Labs" : "e.g. Dr. Ramesh Rao"}
+                        value={formData.name}
+                        onChange={(e) => handleInputChange("name", e.target.value)}
+                      />
+                    </div>
+
+                    {/* STUDENT SPECIFIC FIELDS */}
+                    {authRole === "student" && (
+                      <>
+                        <div className="form-grid-2 form-group-custom">
+                          <div>
+                            <label className="field-label">Current Degree / Major</label>
+                            <input
+                              type="text"
+                              required
+                              className="input-field"
+                              placeholder="e.g. B.Tech Computer Science"
+                              value={formData.degree}
+                              onChange={(e) => handleInputChange("degree", e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="field-label">Graduation Year</label>
+                            <input
+                              type="number"
+                              required
+                              className="input-field"
+                              placeholder="2027"
+                              value={formData.graduation_year}
+                              onChange={(e) => handleInputChange("graduation_year", e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="form-grid-2 form-group-custom">
+                          <div>
+                            <label className="field-label">College / University Name</label>
+                            <input
+                              type="text"
+                              required
+                              className="input-field"
+                              placeholder="e.g. National Institute of Tech"
+                              value={formData.institution_name}
+                              onChange={(e) => handleInputChange("institution_name", e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="field-label">Primary Technical Domain</label>
+                            <select
+                              className="input-field"
+                              value={formData.domain}
+                              onChange={(e) => handleInputChange("domain", e.target.value)}
+                            >
+                              <option>Engineering & IT</option>
+                              <option>Data Science & AI</option>
+                              <option>UI/UX & Product Design</option>
+                              <option>Cybersecurity</option>
+                            </select>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* ENTERPRISE SPECIFIC FIELDS */}
+                    {authRole === "company" && (
+                      <>
+                        <div className="form-grid-2 form-group-custom">
+                          <div>
+                            <label className="field-label">Company Industry Domain</label>
+                            <select
+                              className="input-field"
+                              value={formData.domain}
+                              onChange={(e) => handleInputChange("domain", e.target.value)}
+                            >
+                              <option>Cloud Infrastructure & Software</option>
+                              <option>Artificial Intelligence & Data</option>
+                              <option>Fintech & Banking</option>
+                              <option>Automotive & Robotics</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="field-label">Company Size</label>
+                            <select
+                              className="input-field"
+                              value={formData.company_size}
+                              onChange={(e) => handleInputChange("company_size", e.target.value)}
+                            >
+                              <option>1-50 (Early Stage)</option>
+                              <option>50-250 (Mid Size)</option>
+                              <option>250-1000 (Growth)</option>
+                              <option>1000+ (Enterprise)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="form-group-custom">
+                          <label className="field-label">Company Website / Career URL</label>
+                          <input
+                            type="url"
+                            className="input-field"
+                            placeholder="https://company.com"
+                            value={formData.website}
+                            onChange={(e) => handleInputChange("website", e.target.value)}
+                          />
+                        </div>
+
+                        <div className="form-group-custom">
+                          <label className="field-label">Target Skill Requirements</label>
+                          <textarea
+                            className="input-field"
+                            rows="2"
+                            placeholder="e.g. React developers, Python data scientists, Cloud DevOps..."
+                            value={formData.requirements}
+                            onChange={(e) => handleInputChange("requirements", e.target.value)}
+                          ></textarea>
+                        </div>
+                      </>
+                    )}
+
+                    {/* FACULTY SPECIFIC FIELDS */}
+                    {authRole === "faculty" && (
+                      <>
+                        <div className="form-grid-2 form-group-custom">
+                          <div>
+                            <label className="field-label">Academic Designation</label>
+                            <input
+                              type="text"
+                              required
+                              className="input-field"
+                              placeholder="e.g. Assistant Professor / HOD"
+                              value={formData.designation}
+                              onChange={(e) => handleInputChange("designation", e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="field-label">Academic Department</label>
+                            <input
+                              type="text"
+                              required
+                              className="input-field"
+                              placeholder="e.g. Computer Engineering"
+                              value={formData.department}
+                              onChange={(e) => handleInputChange("department", e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="form-group-custom">
+                          <label className="field-label">Associated Institution</label>
+                          <input
+                            type="text"
+                            required
+                            className="input-field"
+                            placeholder="e.g. State Engineering University"
+                            value={formData.institution_name}
+                            onChange={(e) => handleInputChange("institution_name", e.target.value)}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* INSTITUTION SPECIFIC FIELDS */}
+                    {authRole === "institution" && (
+                      <>
+                        <div className="form-grid-2 form-group-custom">
+                          <div>
+                            <label className="field-label">AISHE / AICTE Approval Code</label>
+                            <input
+                              type="text"
+                              required
+                              className="input-field"
+                              placeholder="e.g. C-12345 / 1-4321..."
+                              value={formData.aishe_code}
+                              onChange={(e) => handleInputChange("aishe_code", e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="field-label">Institution Category</label>
+                            <select
+                              className="input-field"
+                              value={formData.institution_type}
+                              onChange={(e) => handleInputChange("institution_type", e.target.value)}
+                            >
+                              <option>Autonomous University</option>
+                              <option>Affiliated Engineering College</option>
+                              <option>Polytechnic Institute</option>
+                              <option>National Institute (NIT/IIT/IIIT)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="form-group-custom">
+                          <label className="field-label">Official Portal Website</label>
+                          <input
+                            type="url"
+                            className="input-field"
+                            placeholder="https://university.ac.in"
+                            value={formData.website}
+                            onChange={(e) => handleInputChange("website", e.target.value)}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+
+                {/* EMAIL & PASSWORD FIELDS */}
+                <div className="form-group-custom">
+                  <label className="field-label">Official Email Address (PostgreSQL Key)</label>
+                  <input
+                    type="email"
+                    required
+                    className="input-field"
+                    placeholder="name@organization.edu"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group-custom" style={{ marginBottom: "1.4rem" }}>
+                  <label className="field-label">Password</label>
+                  <input
+                    type="password"
+                    required
+                    className="input-field"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => handleInputChange("password", e.target.value)}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="btn-action primary"
+                  style={{ width: "100%", padding: "0.85rem", fontSize: "0.95rem" }}
+                >
+                  {isSubmitting ? "Processing..." : authMode === "signin" ? "Sign In & Access Workspace" : `Create ${authRole.toUpperCase()} Account & Launch`}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {toastMessage && <div className="toast">{toastMessage}</div>}
+      </>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+</body>
+</html>

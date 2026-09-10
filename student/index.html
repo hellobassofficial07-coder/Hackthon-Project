@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillBridge - Student Portal</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Shared Global CSS -->
+  <link rel="stylesheet" href="../css/styles.css" />
+
+  <!-- React & Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Supabase JS Client CDN -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <!-- Shared Supabase Client & Auth Helper -->
+  <script src="../js/supabase-client.js"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    .progress-bar-bg {
+      background: #e2e8f0;
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+    .stat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const { useState, useEffect } = React;
+
+  // Timed MCQ Diagnostic Questions bank
+  const DIAGNOSTIC_TESTS = {
+    "Cloud & DevOps": [
+      { q: "Which tool is commonly used to automate Infrastructure as Code (IaC)?", opts: ["Terraform", "Postman", "Figma", "Redux"], ans: 0 },
+      { q: "What is the primary function of Kubernetes in production?", opts: ["Compiling C++ source code", "Automating container deployment, scaling, and operations", "Vector prototyping", "Managing client cookies"], ans: 1 },
+      { q: "In CI/CD, what does 'Continuous Delivery' guarantee?", opts: ["Code changes are automatically built, tested, and prepared for release", "Instant payment processing", "Daily software rewrites", "Hardware server upgrades"], ans: 0 }
+    ],
+    "React & Frontend": [
+      { q: "Which React hook manages side-effects like data fetching and subscriptions?", opts: ["useState", "useEffect", "useMemo", "useRef"], ans: 1 },
+      { q: "What is the primary architectural purpose of the Virtual DOM?", opts: ["Minimizes expensive native DOM operations through batched diffing", "Directly binds to PostgreSQL", "Encrypts local passwords", "Renders vector SVGs"], ans: 0 },
+      { q: "How are immutable properties passed from parent to child components in React?", opts: ["State", "Props", "Sessions", "Context Reducers only"], ans: 1 }
+    ],
+    "Data Science & AI": [
+      { q: "Which evaluation metric is ideal for severely imbalanced classification models?", opts: ["Accuracy", "F1-Score / PR-AUC", "Latency", "RAM Cache"], ans: 1 },
+      { q: "What is the core role of an activation function in artificial neural networks?", opts: ["Introduces non-linearity to learn arbitrary complex patterns", "Frees up GPU VRAM", "Establishes foreign keys in SQL", "Normalizes CSS files"], ans: 0 },
+      { q: "Which algorithm is standard for tabular gradient-boosted decision trees?", opts: ["XGBoost / LightGBM", "K-Means", "Dijkstra", "AES-256"], ans: 0 }
+    ]
+  };
+
+  function StudentPortal() {
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState("dashboard"); // dashboard | assessments | opportunities | portfolio
+    const [toastMessage, setToastMessage] = useState("");
+
+    // Live Data States
+    const [jobs, setJobs] = useState([]);
+    const [myApplications, setMyApplications] = useState([]);
+    const [skills, setSkills] = useState([
+      { name: "React & Frontend", current: 85, required: 85, verified: true },
+      { name: "Cloud & DevOps", current: 40, required: 80, verified: false },
+      { name: "Data Science & AI", current: 55, required: 75, verified: false }
+    ]);
+
+    // Assessment Test Engine States
+    const [activeTestSkill, setActiveTestSkill] = useState(null);
+    const [testIndex, setTestIndex] = useState(0);
+    const [testScore, setTestScore] = useState(0);
+
+    const showToast = (msg) => {
+      setToastMessage(msg);
+      setTimeout(() => setToastMessage(""), 3200);
+    };
+
+    // Check Authentication & Load Profile
+    useEffect(() => {
+      async function initializeSession() {
+        const client = window.sb || (window.supabase && typeof window.supabase.from === 'function' ? window.supabase : null);
+        if (!client) {
+          window.location.href = "../index.html";
+          return;
+        }
+
+        const { data: { session } } = await client.auth.getSession();
+        if (!session || !session.user) {
+          window.location.href = "../index.html";
+          return;
+        }
+
+        // Fetch student profile record from PostgreSQL
+        const { data: profile } = await client
+          .from('profiles')
+          .select('*')
+          .eq('email', session.user.email)
+          .maybeSingle();
+
+        if (profile && profile.role !== 'student') {
+          // Redirect if wrong role
+          routeUserToPortal(profile.role);
+          return;
+        }
+
+        setUser(profile || session.user);
+
+        // Fetch active opportunities from jobs table
+        const { data: jobList } = await client
+          .from('jobs')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (jobList) setJobs(jobList);
+        setLoading(false);
+      }
+
+      initializeSession();
+    }, []);
+
+    useEffect(() => {
+      if (window.lucide) window.lucide.createIcons();
+    }, [loading, activeTab, activeTestSkill, jobs]);
+
+    // Apply to Job
+    const handleApplyJob = async (job) => {
+      const client = window.sb || window.supabase;
+      const applicantIdentifier = user.name || user.email;
+      const updatedApplicants = [...(job.applicants || []), applicantIdentifier];
+
+      const { error } = await client
+        .from('jobs')
+        .update({ applicants: updatedApplicants })
+        .eq('id', job.id);
+
+      if (!error) {
+        setMyApplications([...myApplications, job.id]);
+        setJobs(jobs.map(j => j.id === job.id ? { ...j, applicants: updatedApplicants } : j));
+        showToast(`Application submitted to ${job.company}!`);
+      } else {
+        showToast("Application failed: " + error.message);
+      }
+    };
+
+    // Assessment Question Answer Handler
+    const handleAnswerTest = async (optionIndex) => {
+      const currentQuestions = DIAGNOSTIC_TESTS[activeTestSkill] || [];
+      let currentScore = testScore;
+
+      if (optionIndex === currentQuestions[testIndex].ans) {
+        currentScore += 1;
+        setTestScore(currentScore);
+      }
+
+      if (testIndex + 1 < currentQuestions.length) {
+        setTestIndex(testIndex + 1);
+      } else {
+        // Test Completed
+        const finalPercentage = Math.round((currentScore / currentQuestions.length) * 100);
+        setSkills(prev => prev.map(s => 
+          s.name === activeTestSkill 
+            ? { ...s, current: Math.max(s.current, finalPercentage), verified: true } 
+            : s
+        ));
+
+        // Save updated score to Supabase student_skills
+        const client = window.sb || window.supabase;
+        if (client && user?.id) {
+          await client.from('student_skills').upsert({
+            profile_id: user.id,
+            skill_name: activeTestSkill,
+            current_score: finalPercentage
+          });
+        }
+
+        showToast(`Test Complete! Verified Score: ${finalPercentage}% in ${activeTestSkill}`);
+        setActiveTestSkill(null);
+      }
+    };
+
+    if (loading) {
+      return (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+          <p style={{ fontWeight: 700, color: "var(--text-muted)" }}>Loading Student Workspace...</p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {/* Navigation Bar */}
+        <header className="header">
+          <div className="nav-container">
+            <div className="brand-section" onClick={() => setActiveTab("dashboard")}>
+              <div className="brand-logo">SB</div>
+              <div className="brand-title">SkillBridge</div>
+            </div>
+
+            <div className="nav-pill">
+              {["dashboard", "assessments", "opportunities", "portfolio"].map(tab => (
+                <button
+                  key={tab}
+                  className={`nav-item ${activeTab === tab ? "active" : ""}`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            <div className="user-pill">
+              <span className="role-badge role-student">Student</span>
+              <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>{user.name || user.email}</span>
+              <button className="logout-btn" onClick={handleLogout} title="Sign Out">
+                <i data-lucide="log-out" style={{ width: 14, height: 14 }}></i>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Core Layout */}
+        <div className="app-layout">
+          {/* Sidebar */}
+          <aside className="sidebar">
+            <div className="sidebar-heading">Student Suite</div>
+            
+            <button className={`sidebar-btn ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
+              <i data-lucide="home" style={{ width: 18, height: 18 }}></i>
+              <span>Overview</span>
+            </button>
+            <button className={`sidebar-btn ${activeTab === "assessments" ? "active" : ""}`} onClick={() => setActiveTab("assessments")}>
+              <i data-lucide="bar-chart-2" style={{ width: 18, height: 18 }}></i>
+              <span>Skill Gap Profiler</span>
+            </button>
+            <button className={`sidebar-btn ${activeTab === "opportunities" ? "active" : ""}`} onClick={() => setActiveTab("opportunities")}>
+              <i data-lucide="briefcase" style={{ width: 18, height: 18 }}></i>
+              <span>Jobs & Internships</span>
+            </button>
+            <button className={`sidebar-btn ${activeTab === "portfolio" ? "active" : ""}`} onClick={() => setActiveTab("portfolio")}>
+              <i data-lucide="award" style={{ width: 18, height: 18 }}></i>
+              <span>Verified Portfolio</span>
+            </button>
+          </aside>
+
+          {/* Dynamic Content Pane */}
+          <main className="content-area">
+            
+            {/* VIEW 1: DASHBOARD OVERVIEW */}
+            {activeTab === "dashboard" && (
+              <div className="dashboard-body">
+                <section className="hero-card">
+                  <div className="hero-content">
+                    <h2>Welcome back, {user.name || "Student"}!</h2>
+                    <p>
+                      Enrolled in <strong>{user.degree || "Technical Program"}</strong> at <strong>{user.institution_name || "Partner University"}</strong>.
+                      Your verified employability index is currently standing at <strong>{user.match_score || 88}%</strong>.
+                    </p>
+                    <button className="hero-btn" onClick={() => setActiveTab("assessments")}>
+                      Take Diagnostic Assessment &rarr;
+                    </button>
+                  </div>
+                  <div className="hero-graphic">
+                    <i data-lucide="graduation-cap" style={{ width: 44, height: 44 }}></i>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>DigiLocker Synced</span>
+                  </div>
+                </section>
+
+                <div className="side-stack">
+                  <div className="side-card" onClick={() => setActiveTab("opportunities")}>
+                    <div className="side-card-icon">
+                      <i data-lucide="briefcase" style={{ width: 22, height: 22 }}></i>
+                    </div>
+                    <div>
+                      <h4>{jobs.length} Active Positions</h4>
+                      <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Matching your domain criteria</p>
+                    </div>
+                  </div>
+                  <div className="side-card" onClick={() => setActiveTab("assessments")}>
+                    <div className="side-card-icon">
+                      <i data-lucide="target" style={{ width: 22, height: 22 }}></i>
+                    </div>
+                    <div>
+                      <h4>Skill Deficit Visualizer</h4>
+                      <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Targeting corporate thresholds</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Workflow Cards */}
+                <section className="recommended-container">
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: 800 }}>Quick Actions</h3>
+                  <div className="cards-grid">
+                    {[
+                      { title: "Skill Gap Test", icon: "crosshair", action: () => setActiveTab("assessments") },
+                      { title: "Browse Jobs", icon: "briefcase", action: () => setActiveTab("opportunities") },
+                      { title: "My Portfolio", icon: "user-check", action: () => setActiveTab("portfolio") },
+                      { title: "Certifications", icon: "award", action: () => setActiveTab("portfolio") }
+                    ].map((item, idx) => (
+                      <button key={idx} className="rec-card" onClick={item.action}>
+                        <div style={{ background: "var(--primary-light)", color: "var(--primary)", padding: 10, borderRadius: 10 }}>
+                          <i data-lucide={item.icon} style={{ width: 22, height: 22 }}></i>
+                        </div>
+                        <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>{item.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {/* VIEW 2: SKILL GAP ANALYZER & DIAGNOSTIC TESTS */}
+            {activeTab === "assessments" && (
+              <div>
+                <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.4rem" }}>
+                  Diagnostic Skill-Gap Analyzer
+                </h2>
+                <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+                  Identify concrete technical deficits comparing your tested performance with verified industry hiring requirements[cite: 1].
+                </p>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.2rem" }}>
+                  {skills.map((s, idx) => {
+                    const deficit = s.required - s.current;
+                    return (
+                      <div key={idx} className="job-card">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <h4 style={{ fontWeight: 800, fontSize: "1.1rem" }}>{s.name}</h4>
+                          <span className={`stat-badge ${deficit > 0 ? "badge-secondary" : "role-student"}`}>
+                            {s.current}% Verified
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                          Industry Benchmark Requirement: <strong>{s.required}%</strong>
+                        </div>
+
+                        <div className="progress-bar-bg">
+                          <div
+                            className="progress-bar-fill"
+                            style={{
+                              width: `${s.current}%`,
+                              background: deficit > 0 ? "var(--warning)" : "var(--success)"
+                            }}
+                          ></div>
+                        </div>
+
+                        {deficit > 0 ? (
+                          <div style={{ background: "var(--warning-light)", padding: "8px 12px", borderRadius: 8, fontSize: "0.8rem", color: "#b45309" }}>
+                            <strong>Deficit Identified:</strong> {deficit}% competency gap. Take assessment to bridge deficit.
+                          </div>
+                        ) : (
+                          <div style={{ background: "var(--success-light)", padding: "8px 12px", borderRadius: 8, fontSize: "0.8rem", color: "var(--success)" }}>
+                            <strong>Competency Validated:</strong> Meets target enterprise hiring benchmark.
+                          </div>
+                        )}
+
+                        <button
+                          className="btn-action primary"
+                          style={{ marginTop: 8 }}
+                          onClick={() => {
+                            setActiveTestSkill(s.name);
+                            setTestIndex(0);
+                            setTestScore(0);
+                          }}
+                        >
+                          Launch Timed Assessment Test
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 3: JOBS & INTERNSHIPS DISCOVERY */}
+            {activeTab === "opportunities" && (
+              <div>
+                <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.4rem" }}>
+                  Open Enterprise Opportunities
+                </h2>
+                <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+                  Positions directly published by corporate partners into the PostgreSQL jobs registry.
+                </p>
+
+                <div className="card-list">
+                  {jobs.length === 0 ? (
+                    <p style={{ color: "var(--text-muted)" }}>No openings currently active in database.</p>
+                  ) : (
+                    jobs.map(job => {
+                      const hasApplied = myApplications.includes(job.id) || 
+                        (job.applicants && (job.applicants.includes(user.name) || job.applicants.includes(user.email)));
+
+                      return (
+                        <div key={job.id} className="job-card">
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <div>
+                              <h4 style={{ fontWeight: 800, fontSize: "1.1rem" }}>{job.title}</h4>
+                              <p style={{ color: "var(--primary)", fontWeight: 700, fontSize: "0.85rem" }}>{job.company}</p>
+                            </div>
+                            <span className="badge">{job.pay}</span>
+                          </div>
+
+                          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                            <span className="badge badge-secondary">{job.domain}</span>
+                            <span className="badge badge-secondary">{job.location || "Remote"}</span>
+                            <span className="badge badge-secondary">{job.type}</span>
+                          </div>
+
+                          <div className="action-row">
+                            <button
+                              className={`btn-action ${hasApplied ? "applied" : "primary"}`}
+                              onClick={() => !hasApplied && handleApplyJob(job)}
+                            >
+                              {hasApplied ? "✓ Application Active" : "1-Click Apply with Verified Profile"}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 4: VERIFIED DIGITAL PORTFOLIO */}
+            {activeTab === "portfolio" && (
+              <div style={{ maxWidth: 740, background: "#ffffff", padding: "2rem", borderRadius: 20, border: "1px solid var(--border)", boxShadow: "var(--card-shadow)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
+                  <div>
+                    <h2 style={{ fontSize: "1.6rem", fontWeight: 800 }}>{user.name || "Student Talent"}</h2>
+                    <p style={{ color: "var(--primary)", fontWeight: 600, fontSize: "0.9rem" }}>{user.degree} • {user.institution_name}</p>
+                    <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Graduation Cohort: {user.graduation_year || 2027} | Contact: {user.email}</p>
+                  </div>
+                  <span className="role-badge role-student">DigiLocker Verified</span>
+                </div>
+
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <h4 style={{ fontSize: "0.85rem", fontWeight: 800, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>
+                    Standardized Assessment Ratings
+                  </h4>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {skills.map((s, i) => (
+                      <span key={i} className="badge" style={{ padding: "6px 12px" }}>
+                        {s.name}: <strong>{s.current}%</strong>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <h4 style={{ fontSize: "0.85rem", fontWeight: 800, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>
+                    Academic & Industry Certifications
+                  </h4>
+                  <ul style={{ paddingLeft: 20, fontSize: "0.9rem", color: "var(--text-main)", lineHeight: 1.6 }}>
+                    <li>Smart India Hackathon 2026 Participation & SkillBridge Verification[cite: 1]</li>
+                    <li>DigiLocker Authenticated Engineering Enrollment Record[cite: 1]</li>
+                    <li>Technical Competency Badge: React & Frontend Systems (Score: 85%)</li>
+                  </ul>
+                </div>
+
+                <button className="btn-action primary" onClick={() => showToast("Exporting DigiLocker Verified Portfolio Link...")}>
+                  Share Public Portfolio URL
+                </button>
+              </div>
+            )}
+
+          </main>
+        </div>
+
+        {/* TIMED MCQ ASSESSMENT MODAL */}
+        {activeTestSkill && (
+          <div className="modal-overlay">
+            <div className="modal-box">
+              <span className="badge" style={{ marginBottom: 8, display: "inline-block" }}>Verified Diagnostic Test</span>
+              <h3 style={{ fontSize: "1.3rem", fontWeight: 800, marginBottom: "0.5rem" }}>
+                Assessment: {activeTestSkill} (Q{testIndex + 1}/{DIAGNOSTIC_TESTS[activeTestSkill].length})
+              </h3>
+              <p style={{ fontSize: "0.95rem", margin: "1.2rem 0", fontWeight: 600 }}>
+                {DIAGNOSTIC_TESTS[activeTestSkill][testIndex].q}
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {DIAGNOSTIC_TESTS[activeTestSkill][testIndex].opts.map((option, i) => (
+                  <button
+                    key={i}
+                    className="btn-action"
+                    style={{ textAlign: "left", justifyContent: "flex-start", padding: "12px 14px" }}
+                    onClick={() => handleAnswerTest(i)}
+                  >
+                    <strong>{String.fromCharCode(65 + i)}.</strong>&nbsp; {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {toastMessage && <div className="toast">{toastMessage}</div>}
+      </>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<StudentPortal />);
+</script>
+
+</body>
+</html>

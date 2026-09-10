@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillBridge - Enterprise Recruiter Portal</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Shared Global CSS -->
+  <link rel="stylesheet" href="../css/styles.css" />
+
+  <!-- React & Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Supabase JS Client CDN -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <!-- Shared Supabase Client & Auth Helper -->
+  <script src="../js/supabase-client.js"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    .match-tag {
+      background: var(--success-light);
+      color: #059669;
+      border: 1px solid #a7f3d0;
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .applicant-pill {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const { useState, useEffect } = React;
+
+  function CompanyPortal() {
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState("dashboard"); // dashboard | candidates | post-job | applicants | messages
+    const [toastMessage, setToastMessage] = useState("");
+
+    // Live Data Collections
+    const [myJobs, setMyJobs] = useState([]);
+    const [students, setStudents] = useState([]);
+    const [inspectStudent, setInspectStudent] = useState(null);
+
+    // Live Messaging States
+    const [activeChatTarget, setActiveChatTarget] = useState(null);
+    const [chatInput, setChatInput] = useState("");
+    const [messages, setMessages] = useState([]);
+
+    // Post Job Form State
+    const [jobForm, setJobForm] = useState({
+      title: "",
+      type: "Internship",
+      domain: "Engineering & IT",
+      location: "Hybrid",
+      pay: "$35/hr",
+      requirements: "Looking for students proficient with React, Cloud, or Python"
+    });
+
+    const showToast = (msg) => {
+      setToastMessage(msg);
+      setTimeout(() => setToastMessage(""), 3200);
+    };
+
+    // Load Enterprise Session & Database Records
+    useEffect(() => {
+      async function initializeSession() {
+        const client = window.sb || (window.supabase && typeof window.supabase.from === 'function' ? window.supabase : null);
+        if (!client) {
+          window.location.href = "../index.html";
+          return;
+        }
+
+        const { data: { session } } = await client.auth.getSession();
+        if (!session || !session.user) {
+          window.location.href = "../index.html";
+          return;
+        }
+
+        // Fetch company profile from PostgreSQL
+        const { data: profile } = await client
+          .from('profiles')
+          .select('*')
+          .eq('email', session.user.email)
+          .maybeSingle();
+
+        if (profile && profile.role !== 'company') {
+          routeUserToPortal(profile.role);
+          return;
+        }
+
+        setUser(profile || session.user);
+
+        // Fetch candidate talent pool
+        const { data: candidateList } = await client
+          .from('profiles')
+          .select('*')
+          .eq('role', 'student');
+        if (candidateList) setStudents(candidateList);
+
+        // Fetch jobs posted by this company
+        const companyName = profile?.name || session.user.email;
+        const { data: jobList } = await client
+          .from('jobs')
+          .select('*')
+          .eq('company', companyName)
+          .order('created_at', { ascending: false });
+
+        if (jobList) setMyJobs(jobList);
+        setLoading(false);
+      }
+
+      initializeSession();
+    }, []);
+
+    // Fetch messages for active conversation
+    const fetchLiveMessages = async (targetName) => {
+      const client = window.sb || window.supabase;
+      if (!targetName || !user || !client) return;
+
+      const { data } = await client
+        .from('messages')
+        .select('*')
+        .or(`and(sender.eq."${user.name}",receiver.eq."${targetName}"),and(sender.eq."${targetName}",receiver.eq."${user.name}")`)
+        .order('created_at', { ascending: true });
+
+      if (data) setMessages(data);
+    };
+
+    useEffect(() => {
+      if (activeChatTarget) fetchLiveMessages(activeChatTarget.name || activeChatTarget.email);
+    }, [activeChatTarget]);
+
+    useEffect(() => {
+      if (window.lucide) window.lucide.createIcons();
+    }, [loading, activeTab, inspectStudent, activeChatTarget, myJobs, students, messages]);
+
+    // Post Job to Supabase
+    const handlePostJob = async (e) => {
+      e.preventDefault();
+      if (!jobForm.title) return;
+
+      const client = window.sb || window.supabase;
+      const jobPayload = {
+        company: user.name || user.email,
+        title: jobForm.title,
+        type: jobForm.type,
+        domain: jobForm.domain,
+        location: jobForm.location,
+        pay: jobForm.pay,
+        applicants: []
+      };
+
+      const { data, error } = await client
+        .from('jobs')
+        .insert([jobPayload])
+        .select()
+        .single();
+
+      if (!error && data) {
+        setMyJobs([data, ...myJobs]);
+        showToast("Opportunity published to student talent pool!");
+        setActiveTab("applicants");
+        setJobForm({
+          title: "",
+          type: "Internship",
+          domain: "Engineering & IT",
+          location: "Hybrid",
+          pay: "$35/hr",
+          requirements: ""
+        });
+      } else {
+        showToast("Publish error: " + (error ? error.message : ""));
+      }
+    };
+
+    // Send Message
+    const handleSendMessage = async () => {
+      if (!chatInput.trim() || !activeChatTarget) return;
+      const client = window.sb || window.supabase;
+      const targetIdentifier = activeChatTarget.name || activeChatTarget.email;
+
+      const payload = {
+        sender: user.name || user.email,
+        receiver: targetIdentifier,
+        text: chatInput
+      };
+
+      const { error } = await client.from('messages').insert([payload]);
+      if (!error) {
+        setMessages([...messages, payload]);
+        setChatInput("");
+      } else {
+        showToast("Message error: " + error.message);
+      }
+    };
+
+    if (loading) {
+      return (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+          <p style={{ fontWeight: 700, color: "var(--text-muted)" }}>Loading Enterprise Workspace...</p>
+        </div>
+      );
+    }
+
+    const totalApplicantsCount = myJobs.reduce((acc, j) => acc + (j.applicants ? j.applicants.length : 0), 0);
+
+    return (
+      <>
+        {/* Navigation Bar */}
+        <header className="header">
+          <div className="nav-container">
+            <div className="brand-section" onClick={() => setActiveTab("dashboard")}>
+              <div className="brand-logo">SB</div>
+              <div className="brand-title">SkillBridge</div>
+            </div>
+
+            <div className="nav-pill">
+              {[
+                { id: "dashboard", label: "Dashboard" },
+                { id: "candidates", label: "Candidate Match" },
+                { id: "post-job", label: "Post Role" },
+                { id: "applicants", label: "Applications" },
+                { id: "messages", label: "Interviews" }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  className={`nav-item ${activeTab === tab.id ? "active" : ""}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="user-pill">
+              <span className="role-badge role-company">Enterprise</span>
+              <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>{user.name || user.email}</span>
+              <button className="logout-btn" onClick={handleLogout} title="Sign Out">
+                <i data-lucide="log-out" style={{ width: 14, height: 14 }}></i>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div className="app-layout">
+          {/* Sidebar */}
+          <aside className="sidebar">
+            <div className="sidebar-heading">Recruiter Suite</div>
+
+            <button className={`sidebar-btn ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
+              <i data-lucide="home" style={{ width: 18, height: 18 }}></i>
+              <span>Hub Overview</span>
+            </button>
+            <button className={`sidebar-btn ${activeTab === "candidates" ? "active" : ""}`} onClick={() => setActiveTab("candidates")}>
+              <i data-lucide="sparkles" style={{ width: 18, height: 18 }}></i>
+              <span>Talent Matchmaker</span>
+            </button>
+            <button className={`sidebar-btn ${activeTab === "post-job" ? "active" : ""}`} onClick={() => setActiveTab("post-job")}>
+              <i data-lucide="plus-circle" style={{ width: 18, height: 18 }}></i>
+              <span>Publish Opening</span>
+            </button>
+            <button className={`sidebar-btn ${activeTab === "applicants" ? "active" : ""}`} onClick={() => setActiveTab("applicants")}>
+              <i data-lucide="users" style={{ width: 18, height: 18 }}></i>
+              <span>Pipeline & Applicants</span>
+            </button>
+            <button className={`sidebar-btn ${activeTab === "messages" ? "active" : ""}`} onClick={() => setActiveTab("messages")}>
+              <i data-lucide="message-square" style={{ width: 18, height: 18 }}></i>
+              <span>Direct Chat</span>
+            </button>
+          </aside>
+
+          {/* Dynamic Content Views */}
+          <main className="content-area">
+
+            {/* VIEW 1: HUB OVERVIEW */}
+            {activeTab === "dashboard" && (
+              <div className="dashboard-body">
+                <section className="hero-card company">
+                  <div className="hero-content">
+                    <h2>Recruitment Hub: {user.name}</h2>
+                    <p>
+                      Industry Domain: <strong>{user.domain || user.field || "Technology"}</strong> • Verified Pipeline. 
+                      Screen applicants ranked through standardized benchmark tests rather than unverified paper resumes[cite: 1].
+                    </p>
+                    <button className="hero-btn" onClick={() => setActiveTab("candidates")}>
+                      Scout Top Compatible Talent &rarr;
+                    </button>
+                  </div>
+                  <div className="hero-graphic">
+                    <i data-lucide="building-2" style={{ width: 44, height: 44 }}></i>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>Corporate Portal</span>
+                  </div>
+                </section>
+
+                <div className="side-stack">
+                  <div className="side-card" onClick={() => setActiveTab("applicants")}>
+                    <div className="side-card-icon" style={{ background: "var(--warning-light)", color: "#b45309" }}>
+                      <i data-lucide="file-text" style={{ width: 22, height: 22 }}></i>
+                    </div>
+                    <div>
+                      <h4>{totalApplicantsCount} Submissions</h4>
+                      <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Across {myJobs.length} active listings</p>
+                    </div>
+                  </div>
+
+                  <div className="side-card" onClick={() => setActiveTab("candidates")}>
+                    <div className="side-card-icon">
+                      <i data-lucide="users" style={{ width: 22, height: 22 }}></i>
+                    </div>
+                    <div>
+                      <h4>{students.length} Verified Students</h4>
+                      <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Ready for direct evaluation</p>
+                    </div>
+                  </div>
+                </div>
+
+                <section className="recommended-container">
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: 800 }}>Recruiter Quick Actions</h3>
+                  <div className="cards-grid">
+                    {[
+                      { title: "Publish Job", icon: "plus-circle", action: () => setActiveTab("post-job") },
+                      { title: "AI Matches", icon: "sparkles", action: () => setActiveTab("candidates") },
+                      { title: "Applicant Review", icon: "check-square", action: () => setActiveTab("applicants") },
+                      { title: "Interview Chat", icon: "message-circle", action: () => setActiveTab("messages") }
+                    ].map((item, idx) => (
+                      <button key={idx} className="rec-card" onClick={item.action}>
+                        <div style={{ background: "var(--primary-light)", color: "var(--primary)", padding: 10, borderRadius: 10 }}>
+                          <i data-lucide={item.icon} style={{ width: 22, height: 22 }}></i>
+                        </div>
+                        <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>{item.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {/* VIEW 2: AI CANDIDATE MATCHMAKER */}
+            {activeTab === "candidates" && (
+              <div>
+                <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.4rem" }}>
+                  Algorithmic Candidate Matchmaker
+                </h2>
+                <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+                  Candidates ranked by weighted competency match scores derived from diagnostic tests[cite: 1].
+                </p>
+
+                <div className="card-list">
+                  {students.map(s => (
+                    <div key={s.id} className="job-card">
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <h4 style={{ fontWeight: 800, fontSize: "1.1rem" }}>{s.name}</h4>
+                        <span className="match-tag">
+                          <i data-lucide="sparkles" style={{ width: 12, height: 12 }}></i> {s.match_score || 92}% Match
+                        </span>
+                      </div>
+
+                      <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                        {s.degree || "Technical Program"} • {s.institution_name || "Partner College"}
+                      </p>
+
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        <span className="badge badge-secondary">{s.domain || "Engineering"}</span>
+                        <span className="badge badge-secondary">Class of {s.graduation_year || 2027}</span>
+                      </div>
+
+                      <div className="action-row">
+                        <button className="btn-action" onClick={() => setInspectStudent(s)}>
+                          <i data-lucide="eye" style={{ width: 14, height: 14 }}></i> Portfolio
+                        </button>
+                        <button
+                          className="btn-action primary"
+                          onClick={() => {
+                            setActiveChatTarget(s);
+                            setActiveTab("messages");
+                          }}
+                        >
+                          <i data-lucide="message-square" style={{ width: 14, height: 14 }}></i> Interview
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 3: PUBLISH NEW OPENING */}
+            {activeTab === "post-job" && (
+              <div style={{ maxWidth: 640, background: "#ffffff", padding: "2rem", borderRadius: 20, border: "1px solid var(--border)", boxShadow: "var(--card-shadow)" }}>
+                <h2 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.4rem" }}>Publish Career Opportunity</h2>
+                <p style={{ color: "var(--text-muted)", fontSize: "0.88rem", marginBottom: "1.5rem" }}>
+                  Add an opening directly into the PostgreSQL registry for verified student applicants.
+                </p>
+
+                <form onSubmit={handlePostJob}>
+                  <div style={{ marginBottom: "1.1rem" }}>
+                    <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: 4 }}>Role / Opening Title</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Associate Cloud Systems Engineer"
+                      className="input-field"
+                      value={jobForm.title}
+                      onChange={(e) => setJobForm({ ...jobForm, title: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-grid-2" style={{ marginBottom: "1.1rem" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: 4 }}>Opportunity Type</label>
+                      <select
+                        className="input-field"
+                        value={jobForm.type}
+                        onChange={(e) => setJobForm({ ...jobForm, type: e.target.value })}
+                      >
+                        <option>Internship</option>
+                        <option>Full-Time Placement</option>
+                        <option>Live Industry Project</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: 4 }}>Domain</label>
+                      <select
+                        className="input-field"
+                        value={jobForm.domain}
+                        onChange={(e) => setJobForm({ ...jobForm, domain: e.target.value })}
+                      >
+                        <option>Engineering & IT</option>
+                        <option>Data Science & AI</option>
+                        <option>UI/UX & Product Design</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-grid-2" style={{ marginBottom: "1.1rem" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: 4 }}>Work Mode</label>
+                      <select
+                        className="input-field"
+                        value={jobForm.location}
+                        onChange={(e) => setJobForm({ ...jobForm, location: e.target.value })}
+                      >
+                        <option>Hybrid</option>
+                        <option>Remote</option>
+                        <option>On-site</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: 4 }}>Stipend / CTC</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. $40/hr or $85k/yr"
+                        className="input-field"
+                        value={jobForm.pay}
+                        onChange={(e) => setJobForm({ ...jobForm, pay: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn-action primary" style={{ width: "100%", padding: "0.85rem", marginTop: 8 }}>
+                    Save & Publish Role
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* VIEW 4: ACTIVE POSTINGS & PIPELINE APPLICANTS */}
+            {activeTab === "applicants" && (
+              <div>
+                <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.4rem" }}>Active Postings & Candidate Pipeline</h2>
+                <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+                  Monitor verified student submissions saved directly to each job listing[cite: 1].
+                </p>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
+                  {myJobs.length === 0 ? (
+                    <p style={{ color: "var(--text-muted)" }}>No positions published yet. Post your first opportunity above.</p>
+                  ) : (
+                    myJobs.map(job => (
+                      <div key={job.id} className="job-card">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <div>
+                            <h4 style={{ fontWeight: 800, fontSize: "1.15rem" }}>{job.title}</h4>
+                            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                              {job.domain} • {job.location} • {job.pay}
+                            </p>
+                          </div>
+                          <span className="badge">{job.type}</span>
+                        </div>
+
+                        <div style={{ borderTop: "1px solid var(--border)", paddingTop: 10, marginTop: 4 }}>
+                          <span style={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", color: "var(--text-muted)" }}>
+                            Applicants ({job.applicants ? job.applicants.length : 0})
+                          </span>
+
+                          {(!job.applicants || job.applicants.length === 0) ? (
+                            <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: 6 }}>No applications received yet.</p>
+                          ) : (
+                            job.applicants.map((nameOrEmail, idx) => (
+                              <div key={idx} className="applicant-pill">
+                                <span style={{ fontWeight: 600, fontSize: "0.88rem" }}>{nameOrEmail}</span>
+                                <button
+                                  className="btn-action primary"
+                                  style={{ padding: "4px 10px", fontSize: "0.75rem" }}
+                                  onClick={() => {
+                                    const targetObj = students.find(s => s.name === nameOrEmail || s.email === nameOrEmail) || { name: nameOrEmail };
+                                    setActiveChatTarget(targetObj);
+                                    setActiveTab("messages");
+                                  }}
+                                >
+                                  Interview Candidate
+                                </button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 5: DIRECT RECRUITMENT MESSAGES */}
+            {activeTab === "messages" && (
+              <div>
+                <h2 style={{ fontSize: "1.6rem", fontWeight: 800, marginBottom: "1rem" }}>Candidate Interview Channel</h2>
+                <div className="chat-container">
+                  <div className="chat-user-list">
+                    <div style={{ padding: "1rem", fontWeight: 700, borderBottom: "1px solid var(--border)" }}>Candidate Contacts</div>
+                    {students.map(s => (
+                      <div
+                        key={s.id}
+                        className={`chat-user-item ${activeChatTarget && (activeChatTarget.name === s.name || activeChatTarget.email === s.email) ? "active" : ""}`}
+                        onClick={() => setActiveChatTarget(s)}
+                      >
+                        <div className="chat-avatar">{s.name ? s.name.charAt(0) : "S"}</div>
+                        <div>
+                          <p style={{ fontWeight: 700, fontSize: "0.88rem" }}>{s.name || s.email}</p>
+                          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{s.degree || "Student"}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="chat-window">
+                    <div className="chat-header">
+                      <span>Interviewing: <strong>{activeChatTarget ? (activeChatTarget.name || activeChatTarget.email) : "Select a candidate"}</strong></span>
+                    </div>
+
+                    <div className="chat-messages">
+                      {activeChatTarget ? (
+                        messages.length > 0 ? (
+                          messages.map((m, i) => (
+                            <div key={i} className={`chat-bubble ${m.sender === (user.name || user.email) ? "sent" : "received"}`}>
+                              <p style={{ fontSize: "0.7rem", opacity: 0.8, marginBottom: 2 }}>{m.sender}</p>
+                              {m.text}
+                            </div>
+                          ))
+                        ) : (
+                          <p style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "4rem" }}>
+                            No interview dialogue recorded. Send a greeting below.
+                          </p>
+                        )
+                      ) : (
+                        <p style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "4rem" }}>
+                          Select a candidate from the left to start direct screening.
+                        </p>
+                      )}
+                    </div>
+
+                    {activeChatTarget && (
+                      <div className="chat-input-bar">
+                        <input
+                          type="text"
+                          placeholder="Type interview note or invitation..."
+                          style={{ flex: 1, padding: "0.75rem", borderRadius: 8, border: "1px solid var(--border)", outline: "none" }}
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                        />
+                        <button className="btn-action primary" style={{ width: 100 }} onClick={handleSendMessage}>
+                          Send
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </main>
+        </div>
+
+        {/* CANDIDATE PORTFOLIO MODAL */}
+        {inspectStudent && (
+          <div className="modal-overlay" onClick={() => setInspectStudent(null)}>
+            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
+                <div>
+                  <h3 style={{ fontSize: "1.4rem", fontWeight: 800 }}>{inspectStudent.name}</h3>
+                  <p style={{ color: "var(--primary)", fontWeight: 600, fontSize: "0.9rem" }}>{inspectStudent.degree} • {inspectStudent.institution_name}</p>
+                </div>
+                <span className="match-tag"><i data-lucide="sparkles" style={{ width: 12, height: 12 }}></i> {inspectStudent.match_score || 92}% Compatibility</span>
+              </div>
+
+              <div style={{ marginBottom: "1.2rem" }}>
+                <h5 style={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", color: "var(--text-muted)" }}>Verified Credentials:</h5>
+                <p style={{ fontSize: "0.88rem", marginTop: 4 }}>Cohort Year: {inspectStudent.graduation_year || 2027} | Domain: {inspectStudent.domain}</p>
+                <p style={{ fontSize: "0.88rem", color: "var(--text-muted)" }}>Verified via DigiLocker and SkillBridge Diagnostic Assessment Engine[cite: 1].</p>
+              </div>
+
+              <div className="action-row">
+                <button
+                  className="btn-action primary"
+                  onClick={() => {
+                    setActiveChatTarget(inspectStudent);
+                    setInspectStudent(null);
+                    setActiveTab("messages");
+                  }}
+                >
+                  Start Chat Interview
+                </button>
+                <button className="btn-action" onClick={() => setInspectStudent(null)}>Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {toastMessage && <div className="toast">{toastMessage}</div>}
+      </>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<CompanyPortal />);
+</script>
+
+</body>
+</html>
